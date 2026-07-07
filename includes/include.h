@@ -1,0 +1,15 @@
+#ifndef FT_NM_H
+#define FT_NM_H
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int ft_error(char *str, int error_code);
+int ft_strlen(char *str);
+
+#endif

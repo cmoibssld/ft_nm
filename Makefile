@@ -13,7 +13,7 @@ DEP_DIR			=	${BUILD_DIR}/dep
 ######  SOURCES  ######
 #######################
 
-SRCS 			=	main.c
+SRCS 			=	main.c utils.c
 
 HEADERS			=	main.h
 
@@ -39,7 +39,7 @@ CFLAG			=	-Wall -Werror -Wextra \
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf
 
-NAME			=	fractol
+NAME			=	ft_nm
 
 #####################
 ######  RULES  ######
