@@ -1,0 +1,3 @@
+https://sysblog.informatique.univ-paris-diderot.fr/2024/04/01/le-format-elf-executable-and-linkable-format/
+https://jhucsf.github.io/spring2022/assign/assign04.html
+https://medium.com/@b.kayigamba/understanding-the-elf-format-the-backbone-of-linux-binaries-b5da79328728
