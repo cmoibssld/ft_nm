@@ -30,4 +30,5 @@ int main(int argc, char **argv) {
     Elf64_Ehdr *elf_header = (Elf64_Ehdr *)addr;
 
     close(fd);
+    return (0);
 }
