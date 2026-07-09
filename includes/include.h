@@ -1,6 +1,7 @@
 #ifndef FT_NM_H
 #define FT_NM_H
 
+#include <elf.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,5 +12,6 @@
 
 int ft_error(char *str, int error_code);
 int ft_strlen(char *str);
+int putstr(char *str, int fd);
 
 #endif

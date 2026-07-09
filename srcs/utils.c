@@ -1,5 +1,11 @@
 #include "../includes/include.h"
 
+int putstr(char *str, int fd) {
+    int buf_size = ft_strlen(str);
+    write(fd, str, buf_size);
+    return (buf_size);
+}
+
 int ft_strlen(char *str) {
     int i = 0;
     while (str && str[i]) {
