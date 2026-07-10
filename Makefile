@@ -33,8 +33,7 @@ DEPS			=	${SRCS:%.c=${DEP_DIR}/%.d}
 GET_DEP_PATH	=	${@:${OBJ_DIR}/%.o=${DEP_DIR}/.%d}
 
 CC				=	cc
-CFLAG			=	-Wall -Werror -Wextra \
-					-MMD -MP -g3
+CFLAG			=	-MMD -MP -g3
 
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf

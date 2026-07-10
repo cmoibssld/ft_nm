@@ -1,8 +1,15 @@
 #ifndef FT_NM_H
 #define FT_NM_H
 
+enum Architecture {
+    ARCHITECTURE_64,
+    ARCHITECTURE_32,
+    ARCHITECTURE_INVALID,
+};
+
 #include <elf.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
