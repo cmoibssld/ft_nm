@@ -47,3 +47,5 @@ Data and execution :
 - .data (Initialized Data / SHT_PROGBITS)
 - .bss (Block Started by Symbol / SHT_NOBITS)
 
+https://wiki.osdev.org/ELF_Tutorial
+

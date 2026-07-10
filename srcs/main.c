@@ -40,6 +40,60 @@ int elf_check_architecture(unsigned char *addr) {
     }
 }
 
+bool elf_check_supported(Elf32_Ehdr *hdr) {
+
+	if(hdr->e_ident[EI_CLASS] != ELFCLASS32) {
+		ERROR("Unsupported ELF File Class.\n");
+		return false;
+	}
+	if(hdr->e_ident[EI_DATA] != ELFDATA2LSB) {
+		ERROR("Unsupported ELF File byte order.\n");
+		return false;
+	}
+	if(hdr->e_machine != EM_386) {
+		ERROR("Unsupported ELF File target.\n");
+		return false;
+	}
+	if(hdr->e_ident[EI_VERSION] != EV_CURRENT) {
+		ERROR("Unsupported ELF File version.\n");
+		return false;
+	}
+	if(hdr->e_type != ET_REL && hdr->e_type != ET_EXEC) {
+		ERROR("Unsupported ELF File type.\n");
+		return false;
+	}
+	return true;
+}
+
+Elf32_Shdr *elf_sheader(Elf32_Ehdr *hdr) {
+	return (Elf32_Shdr *)((int)hdr + hdr->e_shoff);
+}
+
+Elf32_Shdr *elf_section(Elf32_Ehdr *hdr, int idx) {
+	return &elf_sheader(hdr)[idx];
+}
+
+char *elf_str_table(Elf32_Ehdr *hdr) {
+	if(hdr->e_shstrndx == SHN_UNDEF) return NULL;
+	return (char *)hdr + elf_section(hdr, hdr->e_shstrndx)->sh_offset;
+}
+
+char *elf_lookup_string(Elf32_Ehdr *hdr, int offset) {
+	char *strtab = elf_str_table(hdr);
+	if(strtab == NULL) return NULL;
+	return strtab + offset;
+}
+
+int elf_32_function(Elf32_Ehdr *hdr, int fd) {
+
+    if (!elf_check_supported(hdr)) {
+        close(fd);
+        ft_error("ELF not supported\n", 1);
+    }
+
+    Elf32_Shdr *sheader = elf_sheader(hdr);
+}
+
 int main(int argc, char **argv) {
 
     int         fd;
@@ -74,11 +128,12 @@ int main(int argc, char **argv) {
 
     if (architecture_type == ARCHITECTURE_64) {
         printf("64 BITS ARCHITECTURE\n");
-        Elf64_Ehdr *elf_header = (Elf64_Ehdr *)addr;
+        // Elf64_Ehdr *elf_header = (Elf64_Ehdr *)addr;
     }
     else if (architecture_type == ARCHITECTURE_32) {
         printf("32 BITS ARCHITECTURE\n");
         Elf32_Ehdr *elf_header = (Elf32_Ehdr *)addr;
+        elf_32_function(elf_header, fd);
     }
     else {
         close(fd);
