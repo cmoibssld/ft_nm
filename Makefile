@@ -9,13 +9,19 @@ BUILD_DIR		=	build
 OBJ_DIR			=	${BUILD_DIR}/obj
 DEP_DIR			=	${BUILD_DIR}/dep
 
+TEST_DIR 		= 	tests/unit_test
+
 #######################
 ######  SOURCES  ######
 #######################
 
-SRCS 			=	main.c
+SRCS 			=	main.c \
+					errors.c
 
-HEADERS			=	main.h
+HEADERS			=	main.h \
+					errors.h
+
+UNIT_TEST		= 	ft_strjoin_test.c
 
 ###########################
 ######  COMPILATION  ######
@@ -32,6 +38,8 @@ OBJS			=	${SRCS:%.c=${OBJ_DIR}/%.o}
 DEPS			=	${SRCS:%.c=${DEP_DIR}/%.d}
 GET_DEP_PATH	=	${@:${OBJ_DIR}/%.o=${DEP_DIR}/.%d}
 
+OBJS_TEST		= ${UNIT_TEST:%.c=${TEST_DIR}/%.o}
+
 CC				=	cc
 CFLAG			=	-Wall -Werror -Wextra \
 					-MMD -MP -g3
@@ -39,7 +47,8 @@ CFLAG			=	-Wall -Werror -Wextra \
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf
 
-NAME			=	fractol
+NAME			=	ft_nm
+TEST_NAME		=	unit_test_nm
 
 #####################
 ######  RULES  ######
@@ -58,6 +67,12 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 		-c $< -o $@ \
 		-MF $(DEP_DIR)/$(notdir $(basename $<)).d -MT $@
 
+test: $(TEST_NAME)
+
+$(TEST_NAME): $(OBJS_TEST)
+	$(CC) $(CFLAGS) -I$(INC_DIR) \
+		-c $< -o $@
+	
 clean:
 	$(RM) $(BUILD_DIR)
 
