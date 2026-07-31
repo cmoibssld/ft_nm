@@ -1,4 +1,4 @@
-#ifnedf ERRORS_H
+#ifndef ERRORS_H
 # define ERRORS_H
 
 # include <string.h>

@@ -5,11 +5,11 @@
 SRC_DIR			=	srcs
 INC_DIR			=	includes
 
+LIBFT_DIR		= 	libft/
+
 BUILD_DIR		=	build
 OBJ_DIR			=	${BUILD_DIR}/obj
 DEP_DIR			=	${BUILD_DIR}/dep
-
-TEST_DIR 		= 	tests/unit_test
 
 #######################
 ######  SOURCES  ######
@@ -20,8 +20,6 @@ SRCS 			=	main.c \
 
 HEADERS			=	main.h \
 					errors.h
-
-UNIT_TEST		= 	ft_strjoin_test.c
 
 ###########################
 ######  COMPILATION  ######
@@ -47,37 +45,36 @@ CFLAG			=	-Wall -Werror -Wextra \
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf
 
-NAME			=	ft_nm
-TEST_NAME		=	unit_test_nm
+NAME			= 	ft_nm
+LIBFT_LIB		=	libft.a
 
 #####################
 ######  RULES  ######
 #####################
 
-all: $(NAME)
+all: $(LIBFT_LIB) $(NAME)
 
 -include $(DEPS)
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAG) $^ -o $@ 
+	$(CC) $(CFLAG) $^ -o $@ $(LIBFT_DIR)/$(LIBFT_LIB)
 
 ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(MKDIR) $(dir $@) $(dir $(GET_DEP_PATH))
-	$(CC) $(CFLAG) -I$(INC_DIR) \
+	$(CC) $(CFLAG) -I$(INC_DIR) -I$(LIBFT_DIR)/$(INC_DIR) \
 		-c $< -o $@ \
 		-MF $(DEP_DIR)/$(notdir $(basename $<)).d -MT $@
 
-test: $(TEST_NAME)
-
-$(TEST_NAME): $(OBJS_TEST)
-	$(CC) $(CFLAGS) -I$(INC_DIR) \
-		-c $< -o $@
-	
+$(LIBFT_LIB):
+	$(MAKE) -C $(LIBFT_DIR)
+		
 clean:
 	$(RM) $(BUILD_DIR)
+	$(MAKE) clean -C $(LIBFT_DIR)
 
 fclean: clean
 	rm -rf $(NAME)
+	$(MAKE) clean -C $(LIBFT_DIR)
 
 re: fclean all
 
