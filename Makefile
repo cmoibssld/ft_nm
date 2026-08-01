@@ -38,7 +38,7 @@ GET_DEP_PATH	=	${@:${OBJ_DIR}/%.o=${DEP_DIR}/.%d}
 
 OBJS_TEST		= ${UNIT_TEST:%.c=${TEST_DIR}/%.o}
 
-CC				=	cc
+CC				=	gcc
 CFLAG			=	-Wall -Werror -Wextra \
 					-MMD -MP -g3
 
