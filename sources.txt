@@ -1,0 +1,51 @@
+https://sysblog.informatique.univ-paris-diderot.fr/2024/04/01/le-format-elf-executable-and-linkable-format/
+https://jhucsf.github.io/spring2022/assign/assign04.html
+https://medium.com/@b.kayigamba/understanding-the-elf-format-the-backbone-of-linux-binaries-b5da79328728
+https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html
+https://man7.org/linux/man-pages/man5/elf.5.html
+https://man7.org/linux/man-pages/man2/mmap.2.html
+https://man7.org/linux/man-pages/man1/nm.1.html
+
+Structure Header ELF (Elf64_Ehdr)
+
+typedef struct {
+    unsigned char e_ident[EI_NIDENT]; // Magic Bytes (7f 45 4c 46) -> ".ELF"
+    uint16_t      e_type;             // File type (Executable, Shared Object, etc.)
+    uint16_t      e_machine;          // Target Architecture (x86_64, ARM, etc.)
+    uint32_t      e_version;          // Format version ELF
+    Elf64_Addr    e_entry;            // Entry point address
+    Elf64_Off     e_phoff;            // Header programm table offset
+    Elf64_Off     e_shoff;            // Header section table offset
+    uint32_t      e_flags;            // Processor flag
+    uint16_t      e_ehsize;           // ELF header size
+    uint16_t      e_phentsize;        // Header program entry size
+    uint16_t      e_phnum;            // Program headers number
+    uint16_t      e_shentsize;        // Size of header section entry
+    uint16_t      e_shnum;            // Sections number
+    uint16_t      e_shstrndx;         // Section index who has section names
+} Elf64_Ehdr;
+
+Structure Header Section ELF (Elf64_Shdr)
+
+typedef struct {
+    uint32_t   sh_name;      // Section name index (in section .shstrtab)
+    uint32_t   sh_type;      // Section type (ex: SHT_PROGBITS, SHT_SYMTAB, SHT_STRTAB)
+    uint64_t   sh_flags;     // Attributes (ex: W (Write), A (Alloc), X (Execute))
+    Elf64_Addr sh_addr;      // Virtual address of section in memory
+    Elf64_Off  sh_offset;    // Section position in file
+    uint64_t   sh_size;      // Session size in bytes 
+    uint32_t   sh_link;      // Link to another section
+    uint32_t   sh_info;      // Additionnal information
+    uint64_t   sh_addralign; // Memory alignement
+    uint64_t   sh_entsize;   // If section is an array (ex: .symtab), entry size
+} Elf64_Shdr;
+
+Sections :
+
+Data and execution : 
+- .text (Code / SHT_PROGBITS)
+- .data (Initialized Data / SHT_PROGBITS)
+- .bss (Block Started by Symbol / SHT_NOBITS)
+
+https://wiki.osdev.org/ELF_Tutorial
+
