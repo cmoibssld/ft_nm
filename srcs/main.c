@@ -4,6 +4,7 @@
 #include <unistd.h> // close, write
 
 #include "errors.h" // print_error_message
+#include "identification.h"
 #include "libft.h" // ft_calloc
 #include "main.h"
 
@@ -36,9 +37,11 @@ int  main(int ac, char **av)
 {
   int          fd;
   int          i;
+  int          return_code;
   char         *loaded_file; // Memory where is store the file
   struct stat  *statbuf;
 
+  return_code = 0;
   statbuf = ft_calloc(1, sizeof(struct stat));
   if (statbuf == NULL)
     return (print_error_message(av[0]));
@@ -49,15 +52,18 @@ int  main(int ac, char **av)
     loaded_file = NULL;
     loaded_file = open_file(av[i], statbuf, &fd);
     if (loaded_file == NULL)
-      print_error_message(av[i]);
-    else
     {
-      printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number
-      printf("%s\n", loaded_file);
-      close_file(loaded_file, statbuf, &fd);
+      print_error_message(av[i]);
+      return_code = 1;
+      continue ;
     }
+    printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number. Careful, little or big endian change way of reading the bytes !!
+    printf("%s\n", loaded_file);
+    return_code += core_logic(av[i], loaded_file, statbuf->st_size);
+    close_file(loaded_file, statbuf, &fd);
   }
   free(statbuf);
+  return (return_code);
 }
 
 // int  main(int ac, char **av)

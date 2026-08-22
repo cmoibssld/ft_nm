@@ -5,7 +5,7 @@
 SRC_DIR			=	srcs
 INC_DIR			=	includes
 
-LIBFT_DIR		= 	libft/
+LIBFT_DIR		= 	libft
 
 BUILD_DIR		=	build
 OBJ_DIR			=	${BUILD_DIR}/obj
@@ -16,10 +16,13 @@ DEP_DIR			=	${BUILD_DIR}/dep
 #######################
 
 SRCS 			=	main.c \
+					identification.c \
 					errors.c
 
 HEADERS			=	main.h \
-					errors.h
+					identification.h \
+					errors.h \
+					symbols.h
 
 ###########################
 ######  COMPILATION  ######
@@ -38,9 +41,13 @@ GET_DEP_PATH	=	${@:${OBJ_DIR}/%.o=${DEP_DIR}/.%d}
 
 OBJS_TEST		= ${UNIT_TEST:%.c=${TEST_DIR}/%.o}
 
-CC				=	gcc
+CC				=	clang # For cross compilation and test my own object files
 CFLAG			=	-Wall -Werror -Wextra \
 					-MMD -MP -g3
+
+TARGET_FLAGS	=
+
+X86_64_FLAGS	= --target=x86_64-linux-gnu # To create own x86-64 objects for testing
 
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf
@@ -57,11 +64,11 @@ all: $(LIBFT_LIB) $(NAME)
 -include $(DEPS)
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAG) $^ -o $@ $(LIBFT_DIR)/$(LIBFT_LIB)
+	$(CC) $(CFLAG) $(TARGET_FLAGS) $^ -o $@ $(LIBFT_DIR)/$(LIBFT_LIB)
 
 ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(MKDIR) $(dir $@) $(dir $(GET_DEP_PATH))
-	$(CC) $(CFLAG) -I$(INC_DIR) -I$(LIBFT_DIR)/$(INC_DIR) \
+	$(CC) $(CFLAG) $(TARGET_FLAGS) -I$(INC_DIR) -I$(LIBFT_DIR)/$(INC_DIR) \
 		-c $< -o $@ \
 		-MF $(DEP_DIR)/$(notdir $(basename $<)).d -MT $@
 
@@ -76,6 +83,9 @@ fclean: clean
 	rm -rf $(NAME)
 	$(MAKE) clean -C $(LIBFT_DIR)
 
+x86_64:
+	$(MAKE) TARGET_FLAGS="$(X86_64_FLAGS)" all
+
 re: fclean all
 
-.PHONY: all clean fclean re 
+.PHONY: all clean fclean re x86_64
