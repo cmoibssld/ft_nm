@@ -57,8 +57,8 @@ int  main(int ac, char **av)
       return_code = 1;
       continue ;
     }
-    printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number. Careful, little or big endian change way of reading the bytes !!
-    printf("%s\n", loaded_file);
+    // printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number. Careful, little or big endian change way of reading the bytes !!
+    // printf("%s\n", loaded_file);
     return_code += core_logic(av[i], loaded_file, statbuf->st_size);
     close_file(loaded_file, statbuf, &fd);
   }
