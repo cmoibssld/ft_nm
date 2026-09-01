@@ -2,7 +2,8 @@
 # define IDENTIFICATION_H
 
 # include <stdbool.h> // for bool use
-# include <stdint.h> // for precision with uint8_t variable
+#include <stdint.h>
+# include <stdlib.h> // for size_t, uintXX_t types
 
 typedef enum {
   NOT_A_ELF,
@@ -23,13 +24,17 @@ typedef enum {
   INVALID_ARCH,
   X64_BIT,
   X32_BIT,
-} t_elf_arch ;
+} t_elf_arch;
 
 typedef struct elf_file_key_spec {
   t_elf_id      status;
   t_elf_endian  e;
   t_elf_arch    arch;
   uint16_t      type;
+
+  uint64_t      table_header_addr;
+  uint16_t      table_header_entry_size;
+  uint16_t      table_header_total_entry;
 } t_spec;
 
 int  core_logic(const char * restrict file_name, const char * restrict loaded_file, size_t loaded_size);
@@ -38,4 +43,5 @@ bool  is_a_correct_elf_file(const char * restrict loaded_file, t_spec *specs);
 
 t_elf_endian  endian_identification(const char * restrict loaded_file);
 t_elf_arch    arch_control(const char * restrict loaded_file);
+
 #endif

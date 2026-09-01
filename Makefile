@@ -16,13 +16,16 @@ DEP_DIR			=	${BUILD_DIR}/dep
 #######################
 
 SRCS 			=	main.c \
+					endian.c \
+					errors.c \
 					identification.c \
-					errors.c
+					section_header_info.c
 
 HEADERS			=	main.h \
-					identification.h \
+					endian.h \
 					errors.h \
-					symbols.h
+					identification.h \
+					section_header_info.h
 
 ###########################
 ######  COMPILATION  ######
@@ -86,6 +89,9 @@ fclean: clean
 x86_64:
 	$(MAKE) TARGET_FLAGS="$(X86_64_FLAGS)" all
 
+big_endian:
+	$(MAKE) TARGET_FLAGS="$(BIG_ENDIAN_FLAGS)" all
+	
 re: fclean all
 
 .PHONY: all clean fclean re x86_64

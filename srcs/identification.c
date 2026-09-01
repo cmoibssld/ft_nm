@@ -4,7 +4,7 @@
 #include "errors.h" // error if not a ELF object file -> classic error handling
 #include "identification.h"
 #include "libft.h" // ft_bzero
-#include "symbols.h" // next_step in core logic -> find header, find offset, find symbols ?
+#include "section_header_info.h" // next_step in core logic -> find header, find offset, find symbols ?
 
 static const char *  get_strerror(const t_elf_id error)
 // Each error when parsing ELF header shows differents message
@@ -78,14 +78,16 @@ t_elf_arch  arch_control(const char * restrict loaded_file)
 
 int  core_logic(const char * restrict param, const char * restrict loaded_file, size_t loaded_size)
 {
-  t_spec  specs;
+  t_spec                 specs;
+  t_section_table_data   info;
 
   ft_bzero(&specs, sizeof(t_spec));
+  ft_bzero(&info, sizeof(t_section_table_data));
   if (loaded_size < EI_NIDENT)
     return(print_personnal_error(param, "file too small to be EFL"), 1);
   if (is_a_correct_elf_file(loaded_file, &specs) == false)
       return (print_personnal_error(param, get_strerror(specs.status)), 1);
-  if (find_symbols(loaded_file, loaded_size, &specs))
+  if (find_header_table_info(loaded_file, loaded_size, &specs, &info) == false)
       return (print_personnal_error(param, "Unexpected error while symbol processing"), 1);
   return (0);
 }
