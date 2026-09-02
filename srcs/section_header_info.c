@@ -88,16 +88,39 @@ uint16_t  get_section_header_total_entry(const char *restrict loaded_file, const
   return (0);
 }
 
+uint16_t  get_section_header_string_table_index(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs)
+{
+  if ((specs->arch == X32_BIT && loaded_size < sizeof(Elf32_Ehdr)) ||
+      (specs->arch == X64_BIT && loaded_size < sizeof(Elf64_Ehdr)))
+    return (0);
+  if (specs->e == LITTLE)
+  {
+    if (specs->arch == X32_BIT)
+      return (((const Elf32_Ehdr *)loaded_file)->e_shstrndx);
+    else if (specs->arch == X64_BIT)
+      return (((const Elf64_Ehdr *)loaded_file)->e_shstrndx);
+  }
+  else if (specs->e == BIG)
+  {
+    if (specs->arch == X32_BIT)
+      return (endian_swap16(((const Elf32_Ehdr *)loaded_file)->e_shstrndx));
+    else if (specs->arch == X64_BIT)
+      return (endian_swap16(((const Elf64_Ehdr *)loaded_file)->e_shstrndx));
+  }
+  return (0);
+}
+
 bool  find_header_table_info(const char * restrict loaded_file, const size_t loaded_size, const t_spec * specs, t_section_table_data * info)
 // looking at the whole ELF HEADER not just e_ident. So is the file big enough
 {
   info->address = get_section_header_offset(loaded_file, loaded_size, specs);
   info->entry_size = get_section_header_entry_size(loaded_file,loaded_size, specs);
   info->total_entry = get_section_header_total_entry(loaded_file, loaded_size, specs);
+  info->string_index = get_section_header_string_table_index(loaded_file, loaded_size, specs);
   
-  if (!info->address || !info->entry_size || !info->total_entry)
+  if (!info->address || !info->entry_size || !info->total_entry || !info->string_index)
     return (false);
-  print_offset_res(info->address, info->entry_size, info->total_entry);
+  print_offset_res(info->address, info->entry_size, info->total_entry, info->string_index);
   return (true);
 }
 
@@ -107,9 +130,10 @@ bool  find_header_table_info(const char * restrict loaded_file, const size_t loa
 // 3. Is the number of entries the same
 
 #include <stdio.h>
-void  print_offset_res(const uint16_t table_offset, const uint16_t section_entry_size, const uint16_t total_entry)
+void  print_offset_res(const uint16_t table_offset, const uint16_t section_entry_size, const uint16_t total_entry, const uint16_t string_index)
 {
   printf("table header offset/address: %d\n", table_offset);
   printf("size of an entry inside the section header table: %d\n", section_entry_size);
   printf("total section table entry.ies: %d\n", total_entry);
+  printf("section header string table index: %d\n", string_index);
 }

@@ -31,10 +31,6 @@ typedef struct elf_file_key_spec {
   t_elf_endian  e;
   t_elf_arch    arch;
   uint16_t      type;
-
-  uint64_t      table_header_addr;
-  uint16_t      table_header_entry_size;
-  uint16_t      table_header_total_entry;
 } t_spec;
 
 int  core_logic(const char * restrict file_name, const char * restrict loaded_file, size_t loaded_size);
