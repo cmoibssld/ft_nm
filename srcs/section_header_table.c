@@ -1,31 +1,117 @@
 #include <elf.h>
+#include <stdint.h>
+#include <stdio.h>
 
+#include "endian.h"
+#include "identification.h"
 #include "section_header_info.h"
 #include "section_header_table.h"
 
 // Elf32_Word and Elf64_Word is the same: uint16_t. GNE !
 
-t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
-// for now just read the table and how much there is in it
+
+// From what I have understand on the Section header table.
+// Indeed the section header table is an ELF header where are store as a table all the headers on the sections. They contain information on the section such as names, sizes, locations, etc.,.
+// The first information store, sh_name, aka the name of the function does not point to a string. It is not a name. It is an offset of a string in ... the section name string table. This section name string table ahas it's index define inside the ELF header: e_shstrndx.
+// The location of the section in the ELF file image is given bt the section header variable: sh_offset.
+// Name are interesting but the first thing to check for each section in the table is the sh_type. It will tell us wether a section is about.. A symbol : SHT_SYMTAB ! 
+
+
+
+t_section_table_status  read_as_32bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info)
 {
-  char  *section_header_table;
-  char  *e_shstrtab;
+  const Elf32_Shdr  *section_header;
+  uint16_t          i;
+  Elf32_Word        type;
 
-  // access section header table
-  if (loaded_size < info->address + info->string_index)
-    return (SIZE_ERROR);
+  section_header = (Elf32_Shdr *)(loaded_file + info->address);
+  i = 0;
+  while (i < info->total_entry)
+  {
+    if (loaded_size < info->address + i * sizeof(Elf32_Shdr))
+      return (SIZE_ERROR);
+    type = section_header[i].sh_type == SHT_SYMTAB;
+    if (!little_endian)
+      endian_swap32(type);
+    if (type == SHT_SYMTAB)
+    {
+      printf("I found a symbol (table?)!");
+      // look_for_symbols(loaded_file, section_header[i].sh_name, section_header[i].sh_offset, section_header[i].sh_offset);
+      // look_for_name(loaded_file, info->string_index, section_header[i].sh_name);
+    }
+    i++;
+  }
+  return (CORRECT);
+}
 
-  section_header_table = loaded_file + info->address;
-  e_shstrtab = section_header_table + info->string_index;
+t_section_table_status  symbol_table_id(const uint8_t type, const bool little_endian, const Elf64_Sym *symbol_header)
+{
+  if (type == STT_NOTYPE) // one byte, endianness doesn't matter
+    printf("No specific type\n");
+  if (type == STT_OBJECT)
+    printf("Variables, array, etc. found !\n");
+  else if (type == STT_FUNC)
+  {
+    printf("Function found !\n");
+    // now for the real print of the symbol :
     
-  if (specs->arch == X32_BIT)
-    return (read_as_32bit(loaded_file, loaded_size, info));
-  if (specs->arch == X64_BIT)
-    return (read_as_64bit(loaded_file,, loaded_size, info));
-  // if (loaded_size < (size_t)info->total_entry * (size_t)info->entry_size + (size_t)info->address)
-  //   return (SIZE_ERROR); // Problem: corrupt ELF file.
-  // if (info->string_index == SHN_UNDEF)
-  //   return (TABLE_INCOMPLETE);
+  }
+  else if (type == STT_SECTION)
+    printf("Symbol + section. What is this?\n");
+  else if (type == STT_FILE)
+    printf("A file name ! Nice\n");
+  else if (type == STT_COMMON)
+    printf("Common data object\n");
+  else if (type == STT_TLS)
+    printf("Thread local data object okk...\n");
+  else
+    printf("Symbol found\n");
+  return (CORRECT);
+}
+
+t_section_table_status  read_as_64bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info)
+{
+  const Elf64_Shdr  *section_header;
   
-  // return (CORRECT);
+  const Elf64_Sym   *symbol_header;
+  uint16_t          i; // index in section header table
+  uint16_t          j; // index in symbol table
+  Elf64_Word        type;  
+
+  section_header = (Elf64_Shdr *)(loaded_file + info->address);
+  i = 0;
+  while (i < info->total_entry)
+  {
+    if (info->address + i * sizeof(Elf64_Shdr) > loaded_size)
+      return (SIZE_ERROR);
+    type = section_header[i].sh_type;
+    if (!little_endian)
+      endian_swap32(type);
+    if (type == SHT_SYMTAB) // || type == SHT_DYNSYM) // SHT_DYNSM is an option actually... aka a BONUS
+    {
+      printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
+      j = 1; // fist one of the table is all 0. Maybe should I check it ?
+      symbol_header = (Elf64_Sym *)(loaded_file + section_header[i].sh_offset);
+      while (j * sizeof(Elf64_Sym) < section_header[i].sh_size) // counting the number of symbols (indirect)
+      {
+        if (section_header[i].sh_offset + j * sizeof(Elf64_Sym) > loaded_size)
+          return (SIZE_ERROR);
+        if (symbol_header[j].st_shndx != SHN_UNDEF) // this is 0 so no problem with endian ?
+          symbol_table_id(ELF64_ST_TYPE(symbol_header[j].st_info), litlle_endian, symbol_header[i]);
+        ++j;
+      }
+    }
+    i++;
+  }
+  return (CORRECT);
+}
+
+t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
+// Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
+{
+  if (specs->arch == X32_BIT)
+    return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
+  if (specs->arch == X64_BIT)
+    return (read_as_64bit(loaded_file, loaded_size, specs->e == LITTLE, info));
+  return (TABLE_INCOMPLETE);
 }

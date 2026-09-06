@@ -19,12 +19,14 @@ SRCS 			=	main.c \
 					endian.c \
 					errors.c \
 					identification.c \
+					section_header_table.c \
 					section_header_info.c
 
 HEADERS			=	main.h \
 					endian.h \
 					errors.h \
 					identification.h \
+					section_header_table.h \
 					section_header_info.h
 
 ###########################
