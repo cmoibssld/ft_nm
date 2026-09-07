@@ -1,9 +1,12 @@
 #include <elf.h>
+#include <inttypes.h> // For the PRIx64 macro...
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include "endian.h"
 #include "identification.h"
+#include "output_formatting.h"
 #include "section_header_info.h"
 #include "section_header_table.h"
 
@@ -44,18 +47,27 @@ t_section_table_status  read_as_32bit(const char *loaded_file, const size_t load
   return (CORRECT);
 }
 
-t_section_table_status  symbol_table_id(const uint8_t type, const bool little_endian, const Elf64_Sym *symbol_header)
+t_section_table_status  symbol_table_id(const uint16_t st_info, const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
 {
+  uint8_t  type;
+  uint8_t  binding;
+
+  if (x32 == true)
+  {
+    type = ELF32_ST_TYPE(st_info);
+    binding = ELF32_ST_BIND(st_info);
+  }
+  else
+  {
+    type = ELF64_ST_TYPE(st_info);
+    binding = ELF64_ST_BIND(st_info);
+  }
   if (type == STT_NOTYPE) // one byte, endianness doesn't matter
     printf("No specific type\n");
-  if (type == STT_OBJECT)
+  else if (type == STT_OBJECT)
     printf("Variables, array, etc. found !\n");
-  else if (type == STT_FUNC)
-  {
-    printf("Function found !\n");
-    // now for the real print of the symbol :
-    
-  }
+  else if (type == STT_FUNC) // only used now    
+    print_function_symbol(binding, little_endian, x32, symbol_header);
   else if (type == STT_SECTION)
     printf("Symbol + section. What is this?\n");
   else if (type == STT_FILE)
@@ -76,7 +88,7 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
   const Elf64_Sym   *symbol_header;
   uint16_t          i; // index in section header table
   uint16_t          j; // index in symbol table
-  Elf64_Word        type;  
+  Elf64_Word        type;
 
   section_header = (Elf64_Shdr *)(loaded_file + info->address);
   i = 0;
@@ -86,7 +98,7 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
       return (SIZE_ERROR);
     type = section_header[i].sh_type;
     if (!little_endian)
-      endian_swap32(type);
+      type = endian_swap32(type);
     if (type == SHT_SYMTAB) // || type == SHT_DYNSYM) // SHT_DYNSM is an option actually... aka a BONUS
     {
       printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
@@ -97,7 +109,11 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
         if (section_header[i].sh_offset + j * sizeof(Elf64_Sym) > loaded_size)
           return (SIZE_ERROR);
         if (symbol_header[j].st_shndx != SHN_UNDEF) // this is 0 so no problem with endian ?
-          symbol_table_id(ELF64_ST_TYPE(symbol_header[j].st_info), litlle_endian, symbol_header[i]);
+          symbol_table_id(ELF64_ST_TYPE(symbol_header[j].st_info),
+                ELF64_ST_BIND(symbol_header[j].st_info),
+                 little_endian, false, &symbol_header[j]);
+        // else // external symbol, lookup value
+
         ++j;
       }
     }

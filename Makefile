@@ -19,6 +19,7 @@ SRCS 			=	main.c \
 					endian.c \
 					errors.c \
 					identification.c \
+					output_formatting.c \
 					section_header_table.c \
 					section_header_info.c
 
@@ -26,6 +27,7 @@ HEADERS			=	main.h \
 					endian.h \
 					errors.h \
 					identification.h \
+					output_formatting.c \
 					section_header_table.h \
 					section_header_info.h
 

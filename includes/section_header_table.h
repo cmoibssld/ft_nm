@@ -19,6 +19,6 @@ t_section_table_status  read_table(const char * restrict loaded_file, const size
 t_section_table_status  read_as_32bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info);
 t_section_table_status  read_as_64bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info);
 
-t_section_table_status  symbol_table_id(const uint8_t type);
+t_section_table_status  symbol_table_id(const uint16_t st_info, const bool litlle_endian, const bool x32, const void *symbol_header, const char *string_table);
 
 #endif
