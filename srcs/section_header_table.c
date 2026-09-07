@@ -84,7 +84,7 @@ t_section_table_status  symbol_table_id(const uint16_t st_info, const bool littl
 t_section_table_status  read_as_64bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info)
 {
   const Elf64_Shdr  *section_header;
-  
+  const char        *strtab;
   const Elf64_Sym   *symbol_header;
   uint16_t          i; // index in section header table
   uint16_t          j; // index in symbol table
@@ -101,6 +101,10 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
       type = endian_swap32(type);
     if (type == SHT_SYMTAB) // || type == SHT_DYNSYM) // SHT_DYNSM is an option actually... aka a BONUS
     {
+      if (!little_endian)
+        strtab = &loaded_file[endian_swap32(section_header[i].sh_link)];
+      else
+        strtab = &loaded_file[section_header[i].sh_link];
       printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
       j = 1; // fist one of the table is all 0. Maybe should I check it ?
       symbol_header = (Elf64_Sym *)(loaded_file + section_header[i].sh_offset);
@@ -109,9 +113,8 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
         if (section_header[i].sh_offset + j * sizeof(Elf64_Sym) > loaded_size)
           return (SIZE_ERROR);
         if (symbol_header[j].st_shndx != SHN_UNDEF) // this is 0 so no problem with endian ?
-          symbol_table_id(ELF64_ST_TYPE(symbol_header[j].st_info),
-                ELF64_ST_BIND(symbol_header[j].st_info),
-                 little_endian, false, &symbol_header[j]);
+          symbol_table_id(symbol_header[j].st_info,
+                 little_endian, false, &symbol_header[j], strtab);
         // else // external symbol, lookup value
 
         ++j;
