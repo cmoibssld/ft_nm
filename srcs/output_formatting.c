@@ -1,5 +1,6 @@
 #include <elf.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "output_formatting.h"
@@ -33,6 +34,22 @@ t_section_table_status  print_function_symbol(const uint8_t binding, const bool 
     return (CORRECT);
   }
 
-// t_section_table_status access_symbol_value_64bits(const bool litlle_endian, const void* symbol_header, const char *loaded_file)
-// {
-// }
+t_section_table_status  print_undefined_symbol(const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
+{
+  char symbol;
+  uint32_t  st_name;
+
+  symbol = 'U';
+  if (x32 == true)
+    st_name = ((const Elf32_Sym *)symbol_header)->st_name;
+  else
+    st_name = ((const Elf64_Sym *)symbol_header)->st_name;
+  if (!little_endian)
+    st_name = endian_swap32(st_name);
+  // printf("st_name=%u, strtab=%p, name='%s'\n",
+       // st_name, (void *)string_table, string_table + st_name);
+  printf("%18c %s\n", symbol, string_table + st_name);
+  return (CORRECT);
+}
+
+// Check that st_name is < strtab_size and that it's null terminated...

@@ -120,7 +120,7 @@ bool  find_header_table_info(const char * restrict loaded_file, const size_t loa
   
   if (!info->address || !info->entry_size || !info->total_entry || !info->string_index)
     return (false);
-  print_offset_res(info->address, info->entry_size, info->total_entry, info->string_index);
+  // print_offset_res(info->address, info->entry_size, info->total_entry, info->string_index);
   return (true);
 }
 

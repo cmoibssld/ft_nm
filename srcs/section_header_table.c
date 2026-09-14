@@ -38,7 +38,7 @@ t_section_table_status  read_as_32bit(const char *loaded_file, const size_t load
       endian_swap32(type);
     if (type == SHT_SYMTAB)
     {
-      printf("I found a symbol (table?)!");
+      // printf("I found a symbol (table?)!");
       // look_for_symbols(loaded_file, section_header[i].sh_name, section_header[i].sh_offset, section_header[i].sh_offset);
       // look_for_name(loaded_file, info->string_index, section_header[i].sh_name);
     }
@@ -63,22 +63,23 @@ t_section_table_status  symbol_table_id(const uint16_t st_info, const bool littl
     type = ELF64_ST_TYPE(st_info);
     binding = ELF64_ST_BIND(st_info);
   }
-  if (type == STT_NOTYPE) // one byte, endianness doesn't matter
-    printf("No specific type\n");
-  else if (type == STT_OBJECT)
-    printf("Variables, array, etc. found !\n");
-  else if (type == STT_FUNC) // only used now    
+  // if (type == STT_NOTYPE) // one byte, endianness doesn't matter
+  //   // print_undefined_symbol(binding, little_endian, x32, symbol_header, string_table);
+  //   printf("No specific type\n");
+  // else if (type == STT_OBJECT)
+  //   printf("Variables, array, etc. found !\n");
+  if (type == STT_FUNC) // only used now    
     print_function_symbol(binding, little_endian, x32, symbol_header, string_table);
-  else if (type == STT_SECTION)
-    printf("Symbol + section. What is this?\n");
-  else if (type == STT_FILE)
-    printf("A file name ! Nice\n");
-  else if (type == STT_COMMON)
-    printf("Common data object\n");
-  else if (type == STT_TLS)
-    printf("Thread local data object okk...\n");
-  else
-    printf("Symbol found\n");
+  // else if (type == STT_SECTION)
+  //   printf("Symbol + section. What is this?\n");
+  // else if (type == STT_FILE)
+  //   printf("A file name ! Nice\n");
+  // else if (type == STT_COMMON)
+  //   printf("Common data object\n");
+  // else if (type == STT_TLS)
+  //   printf("Thread local data object okk...\n");
+  // else
+  //   printf("Symbol found\n");
   return (CORRECT);
 }
 
@@ -106,7 +107,7 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
         strtab = loaded_file + endian_swap64((&section_header[endian_swap32(section_header[i].sh_link)])->sh_offset);
       else
         strtab = loaded_file + (&section_header[section_header[i].sh_link])->sh_offset;
-      printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
+      // printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
       j = 1; // fist one of the table is all 0. Maybe should I check it ?
       symbol_header = (Elf64_Sym *)(loaded_file + section_header[i].sh_offset);
       while (j * sizeof(Elf64_Sym) < section_header[i].sh_size) // counting the number of symbols (indirect)
@@ -116,8 +117,8 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
         if (symbol_header[j].st_shndx != SHN_UNDEF) // this is 0 so no problem with endian ?
           symbol_table_id(symbol_header[j].st_info,
                  little_endian, false, &symbol_header[j], strtab);
-        // else // external symbol, lookup value
-
+        else if (ELF64_ST_BIND(symbol_header[j].st_info) == STB_GLOBAL)
+          print_undefined_symbol(little_endian, false, &symbol_header[j], strtab);
         ++j;
       }
     }
