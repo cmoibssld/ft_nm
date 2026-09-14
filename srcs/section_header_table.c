@@ -52,6 +52,7 @@ t_section_table_status  symbol_table_id(const uint16_t st_info, const bool littl
   uint8_t  type;
   uint8_t  binding;
 
+  // (void)string_table;
   if (x32 == true)
   {
     type = ELF32_ST_TYPE(st_info);
@@ -67,7 +68,7 @@ t_section_table_status  symbol_table_id(const uint16_t st_info, const bool littl
   else if (type == STT_OBJECT)
     printf("Variables, array, etc. found !\n");
   else if (type == STT_FUNC) // only used now    
-    print_function_symbol(binding, little_endian, x32, symbol_header);
+    print_function_symbol(binding, little_endian, x32, symbol_header, string_table);
   else if (type == STT_SECTION)
     printf("Symbol + section. What is this?\n");
   else if (type == STT_FILE)
@@ -102,9 +103,9 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
     if (type == SHT_SYMTAB) // || type == SHT_DYNSYM) // SHT_DYNSM is an option actually... aka a BONUS
     {
       if (!little_endian)
-        strtab = &loaded_file[endian_swap32(section_header[i].sh_link)];
+        strtab = loaded_file + endian_swap64((&section_header[endian_swap32(section_header[i].sh_link)])->sh_offset);
       else
-        strtab = &loaded_file[section_header[i].sh_link];
+        strtab = loaded_file + (&section_header[section_header[i].sh_link])->sh_offset;
       printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
       j = 1; // fist one of the table is all 0. Maybe should I check it ?
       symbol_header = (Elf64_Sym *)(loaded_file + section_header[i].sh_offset);
