@@ -91,6 +91,9 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
   uint16_t          i; // index in section header table
   uint16_t          j; // index in symbol table
   Elf64_Word        type;
+  const Elf64_Sym  **final_parse;
+
+  final_parse = ; // alloc done to have a table of which symbol to look for. Then the loop after is only on that table
 
   section_header = (Elf64_Shdr *)(loaded_file + info->address);
   i = 0;
