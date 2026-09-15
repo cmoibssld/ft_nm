@@ -114,10 +114,10 @@ void  fill_array(const void **symbol_array, const char *loaded_file, const t_spe
       {
         if (specs->arch == X32_BIT)
         {
-          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset)[symbol_idx_in_section] : &(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset))[symbol_idx_in_section];
+          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &((Elf32_Sym *)(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf32_Sym *)(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
         }
         else {
-          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset)[symbol_idx_in_section] : &(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section];
+          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
         } // invalid write here ! Weird -> i change the null pointer into a real pointer no ?
         ++symbol_idx_in_section;
         ++symbol_array_idx;
