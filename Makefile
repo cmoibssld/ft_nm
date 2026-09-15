@@ -22,6 +22,7 @@ SRCS 			=	main.c 					\
 					output_formatting.c 	\
 					section_header_table.c 	\
 					section_header_info.c 	\
+					sorting.c				\
 					symbols_sorted_array.c
 
 HEADERS			=	main.h 					\
@@ -31,6 +32,7 @@ HEADERS			=	main.h 					\
 					output_formatting.c 	\
 					section_header_table.h	\
 					section_header_info.h	\
+					sorting.h				\
 					symbols_sorted_array.h
 
 ###########################

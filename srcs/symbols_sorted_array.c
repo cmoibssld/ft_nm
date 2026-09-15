@@ -7,8 +7,8 @@
 
 #include "endian.h"
 #include "identification.h"
-#include "libft.h"
 #include "section_header_info.h"
+#include "sorting.h"
 #include "symbols_sorted_array.h"
 
 // On the method. Allow a table of pointer onto Symbols headers. Then sort it, so it's like nm output.
