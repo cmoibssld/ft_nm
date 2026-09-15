@@ -62,5 +62,5 @@ ssize_t  looping_on_symbols(const void *section_header, const size_t loaded_size
       return (-1);
     ++i;
   }
-  return (i);
+  return (i - 1); // first of the section is always a null symbol
 }
