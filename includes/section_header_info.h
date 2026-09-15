@@ -2,6 +2,7 @@
 # define SECTION_HEADER_INFO_H
 
 # include <stdatomic.h>
+#include <stddef.h>
 # include <stdint.h>
 
 # include "identification.h" // t_specs structure -> what are we talking about

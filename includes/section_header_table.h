@@ -12,6 +12,7 @@ typedef enum {
   SIZE_ERROR,
   SYMBOL_UNCOMPLETE,
   CORRECT,
+  MEMORY_ALLOC_ERROR,
 } t_section_table_status;
 
 t_section_table_status  read_table(const char * restrict loaded_file, const size_t loaded_size, const t_spec * specs, const t_section_table_data *info);

@@ -1,6 +1,7 @@
 #include <elf.h>
 #include <inttypes.h> // For the PRIx64 macro...
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -133,13 +134,15 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
 t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
 {
-  ssize_t symbols_total;
+  const void  **symbols_array;
+  size_t      total_symbols;
 
-  symbols_total = looping_on_sections(loaded_file, loaded_size, specs, info);
-  if (symbols_total == -1)
-    perror("Error while counting symbols\n");
-  else
-    printf("There is %lu symbols in the ELF file\n", symbols_total);
+  symbols_array = create_array(loaded_file, loaded_size, specs, info, &total_symbols);
+  if (symbols_array == NULL)
+    return(MEMORY_ALLOC_ERROR);
+  // sort_array(symbols_array);
+  print_array_important_stuff(symbols_array, specs, total_symbols);
+  free(symbols_array);
   if (specs->arch == X32_BIT)
     return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   if (specs->arch == X64_BIT)
