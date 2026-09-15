@@ -7,6 +7,7 @@
 
 #include "endian.h"
 #include "identification.h"
+#include "main.h"
 #include "output_formatting.h"
 #include "section_header_info.h"
 #include "section_header_table.h"
@@ -131,7 +132,7 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
   return (CORRECT);
 }
 
-t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
+t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, const t_options *opt)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
 {
   const void  **symbols_array;
@@ -140,8 +141,9 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   symbols_array = create_array(loaded_file, loaded_size, specs, info, &total_symbols);
   if (symbols_array == NULL)
     return(MEMORY_ALLOC_ERROR);
-  // sort_array(symbols_array);
+  sort_array(symbols_array, total_symbols, opt);
   print_array_important_stuff(symbols_array, specs, total_symbols);
+  // must RETURN CORRECT
   free(symbols_array);
   if (specs->arch == X32_BIT)
     return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));

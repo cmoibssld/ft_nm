@@ -2,8 +2,10 @@
 # define IDENTIFICATION_H
 
 # include <stdbool.h> // for bool use
-#include <stdint.h>
+# include <stdint.h>
 # include <stdlib.h> // for size_t, uintXX_t types
+
+# include "main.h"
 
 typedef enum {
   NOT_A_ELF,
@@ -33,7 +35,7 @@ typedef struct elf_file_key_spec {
   uint16_t      type;
 } t_spec;
 
-int  core_logic(const char * restrict file_name, const char * restrict loaded_file, size_t loaded_size);
+int  core_logic(const char * restrict file_name, const char * restrict loaded_file, size_t loaded_size, const t_options *opt);
 
 bool  is_a_correct_elf_file(const char * restrict loaded_file, t_spec *specs);
 

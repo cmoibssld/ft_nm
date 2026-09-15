@@ -1,12 +1,15 @@
-#include "symbols_sorted_array.h"
-#include "endian.h"
-#include "identification.h"
-#include "section_header_info.h"
 #include <elf.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
+
+#include "endian.h"
+#include "identification.h"
+#include "libft.h"
+#include "section_header_info.h"
+#include "symbols_sorted_array.h"
 
 // On the method. Allow a table of pointer onto Symbols headers. Then sort it, so it's like nm output.
 // Since file in in memory, looping twice (one to know the total size of the array, the second one to fill it) is not important. Twice, yes but one, knowned-before allocation.
@@ -127,7 +130,20 @@ void  fill_array(const void **symbol_array, const char *loaded_file, const t_spe
   } 
 }
 
-// now sort the array
+void  sort_array(const void **symbols_array, const t_spec *specs, const size_t total_symbols, const t_options *opt)
+{
+  size_t  symbol_size;
+  size_t  array_size;
+
+  if (opt->p == false)
+    return ;
+  symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
+  array_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym **) : sizeof(Elf64_Sym **);
+  if (opt->r == false)
+    qsort(symbols_array, array_size/symbol_size, total_symbols, sym_compare);
+  else
+    qsort(symbols_array, array_size / symbol_size, total_symbols, rev_sym_compare);
+}
 
 void  print_array_important_stuff(const void **symbols_array, const t_spec *specs, const size_t total_symbols)
 {

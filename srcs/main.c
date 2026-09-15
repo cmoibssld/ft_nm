@@ -1,4 +1,5 @@
 #include <fcntl.h> // open
+#include <stdbool.h>
 #include <stdlib.h> // free
 #include <sys/mman.h> // mmap and unmap
 #include <unistd.h> // close, write
@@ -7,6 +8,37 @@
 #include "identification.h"
 #include "libft.h" // ft_calloc
 #include "main.h"
+
+bool  is_an_option(const char *param, t_options *opt)
+{
+  if (param[0] != '-' || ft_strlen(param) != 2)
+    return (false);
+  switch (param[1]) {
+    case 'a': {
+        opt->a = true;
+        return (true);
+      }
+    case 'g': {
+        opt->g = true;
+        return (true);
+      }
+    case 'u': {
+        opt->u = true;
+        return (true);
+      }
+    case 'r': {
+        opt->r = true;
+        return (true);
+      }
+    case 'p': {
+        opt->p = true;
+        return (true);
+      }
+    default: {
+      return (false);
+    }
+  }
+}
 
 char  *close_file(char *loaded_file, struct stat *statbuf, int *fd)
 {
@@ -40,14 +72,20 @@ int  main(int ac, char **av)
   int          return_code;
   char         *loaded_file; // Memory where is store the file
   struct stat  *statbuf;
-
+  t_options    opt;
+  
   return_code = 0;
+  ft_bzero(&opt, sizeof(t_options));
   statbuf = ft_calloc(1, sizeof(struct stat));
   if (statbuf == NULL)
     return (print_error_message(av[0]));
+  for (int i = 1; i < ac; ++i)
+    is_an_option(av[i], &opt);
   i = 0;
   while (++i < ac)
   {
+    if (is_an_option(av[i], &opt))
+      continue ;
     fd = -1;
     loaded_file = NULL;
     loaded_file = open_file(av[i], statbuf, &fd);
@@ -59,7 +97,7 @@ int  main(int ac, char **av)
     }
     // printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number. Careful, little or big endian change way of reading the bytes !!
     // printf("%s\n", loaded_file);
-    return_code += core_logic(av[i], loaded_file, statbuf->st_size);
+    return_code += core_logic(av[i], loaded_file, statbuf->st_size, &opt);
     close_file(loaded_file, statbuf, &fd);
   }
   free(statbuf);
