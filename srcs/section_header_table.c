@@ -9,6 +9,7 @@
 #include "output_formatting.h"
 #include "section_header_info.h"
 #include "section_header_table.h"
+#include "symbols_sorted_array.h"
 
 // Elf32_Word and Elf64_Word is the same: uint16_t. GNE !
 
@@ -33,7 +34,7 @@ t_section_table_status  read_as_32bit(const char *loaded_file, const size_t load
   {
     if (loaded_size < info->address + i * sizeof(Elf32_Shdr))
       return (SIZE_ERROR);
-    type = section_header[i].sh_type == SHT_SYMTAB;
+    type = section_header[i].sh_type; // == SHT_SYMTAB;
     if (!little_endian)
       endian_swap32(type);
     if (type == SHT_SYMTAB)
@@ -91,9 +92,8 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
   uint16_t          i; // index in section header table
   uint16_t          j; // index in symbol table
   Elf64_Word        type;
-  const Elf64_Sym  **final_parse;
 
-  final_parse = ; // alloc done to have a table of which symbol to look for. Then the loop after is only on that table
+ // alloc done to have a table of which symbol to look for. Then the loop after is only on that table
 
   section_header = (Elf64_Shdr *)(loaded_file + info->address);
   i = 0;
@@ -133,6 +133,13 @@ t_section_table_status  read_as_64bit(const char *loaded_file, const size_t load
 t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
 {
+  ssize_t symbols_total;
+
+  symbols_total = looping_on_sections(loaded_file, loaded_size, specs, info);
+  if (symbols_total == -1)
+    perror("Error while counting symbols\n");
+  else
+    printf("There is %lu symbols in the ELF file\n", symbols_total);
   if (specs->arch == X32_BIT)
     return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   if (specs->arch == X64_BIT)

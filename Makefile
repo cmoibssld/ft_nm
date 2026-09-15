@@ -15,21 +15,23 @@ DEP_DIR			=	${BUILD_DIR}/dep
 ######  SOURCES  ######
 #######################
 
-SRCS 			=	main.c \
-					endian.c \
-					errors.c \
-					identification.c \
-					output_formatting.c \
-					section_header_table.c \
-					section_header_info.c
+SRCS 			=	main.c 					\
+					endian.c 				\
+					errors.c 				\
+					identification.c 		\
+					output_formatting.c 	\
+					section_header_table.c 	\
+					section_header_info.c 	\
+					symbols_sorted_array.c
 
-HEADERS			=	main.h \
-					endian.h \
-					errors.h \
-					identification.h \
-					output_formatting.c \
-					section_header_table.h \
-					section_header_info.h
+HEADERS			=	main.h 					\
+					endian.h 				\
+					errors.h 				\
+					identification.h 		\
+					output_formatting.c 	\
+					section_header_table.h	\
+					section_header_info.h	\
+					symbols_sorted_array.h
 
 ###########################
 ######  COMPILATION  ######
