@@ -70,26 +70,26 @@ ssize_t  looping_on_symbols(const void *section_header, const size_t loaded_size
   return (i - 1); // first of the section is always a null symbol
 }
 
-const void  **create_array(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, size_t *total_symbols)
+s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, size_t *total_symbols)
 {
-  const void **ophelia;
-  ssize_t    symbols_count;
-  size_t     ptr_symbol_size;
+  s_symbol *ophelia;
+  ssize_t  symbols_count;
+  // size_t   ptr_symbol_size;
 
   symbols_count = looping_on_sections(loaded_file, loaded_size, specs, info);
   if (symbols_count == -1)
     return (NULL);
   else
     *total_symbols = symbols_count;
-  ptr_symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
-  ophelia = malloc(*total_symbols * ptr_symbol_size);
+  // ptr_symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
+  ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL);
   fill_array(ophelia, loaded_file, specs, info); // limits where tested before, no need for re-check during second passinge
   return (ophelia);
 }
 
-void  fill_array(const void **symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info)
+void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info)
 {
   uint16_t    i;
   uint16_t    symbol_idx_in_section;
@@ -97,6 +97,7 @@ void  fill_array(const void **symbol_array, const char *loaded_file, const t_spe
   uint16_t    sh_type;
   size_t      section_size;
   size_t      symbol_size;
+  const char  *string_table;
   const void  *section_header;
 
   i = 0;
@@ -112,16 +113,24 @@ void  fill_array(const void **symbol_array, const char *loaded_file, const t_spe
     // reached a section with symbol, copy the address of the pointer into the symbol_array
     {
       section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size;
+      if (specs->arch == X32_BIT)
+        string_table = specs->e == LITTLE ? loaded_file + ((Elf32_Shdr *)(&section_header[((Elf32_Shdr *)&section_header[i])->sh_link]))->sh_offset : loaded_file + endian_swap32(((Elf32_Shdr *)(&section_header[((Elf32_Shdr *)&section_header[i])->sh_link]))->sh_offset );  
+      else
+        string_table = specs->e == LITTLE ? loaded_file + ((Elf64_Shdr *)(&section_header[((Elf64_Shdr *)&section_header[i])->sh_link]))->sh_offset : loaded_file + endian_swap32(((Elf64_Shdr *)(&section_header[((Elf64_Shdr *)&section_header[i])->sh_link]))->sh_offset );  // so fucking complicated
+        
       symbol_idx_in_section = 1; // index 0 is always a NULL symbol
       while (symbol_idx_in_section * symbol_size < section_size)
       {
         if (specs->arch == X32_BIT)
         {
-          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &((Elf32_Sym *)(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf32_Sym *)(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
+          symbol_array[symbol_array_idx].sym = specs->e == LITTLE ? &((Elf32_Sym *)(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf32_Sym *)(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
+          symbol_array[symbol_array_idx].name = string_table + (((Elf32_Sym *)&symbol_array[symbol_array_idx].sym)->st_name);
         }
         else {
-          symbol_array[symbol_array_idx] = specs->e == LITTLE ? &((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
-        } // invalid write here ! Weird -> i change the null pointer into a real pointer no ?
+          symbol_array[symbol_array_idx].sym = specs->e == LITTLE ? &((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
+          symbol_array[symbol_array_idx].name = string_table + (((Elf64_Sym *)&symbol_array[symbol_array_idx].sym)->st_name);
+          //assign name -> no copy of the string
+        }
         ++symbol_idx_in_section;
         ++symbol_array_idx;
       }
@@ -130,22 +139,23 @@ void  fill_array(const void **symbol_array, const char *loaded_file, const t_spe
   } 
 }
 
-void  sort_array(const void **symbols_array, const t_spec *specs, const size_t total_symbols, const t_options *opt)
+void  sort_array(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols, const t_options *opt)
 {
   size_t  symbol_size;
   size_t  array_size;
 
-  if (opt->p == false)
+  if (opt->p == true)
     return ;
   symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
   array_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym **) : sizeof(Elf64_Sym **);
   if (opt->r == false)
-    qsort(symbols_array, array_size/symbol_size, total_symbols, sym_compare);
+    qsort(&symbols_array, array_size/symbol_size, total_symbols, sym_compare); // PROBLEM: cannot sort only with Elf32/64_Sym
   else
-    qsort(symbols_array, array_size / symbol_size, total_symbols, rev_sym_compare);
+    qsort(&symbols_array, array_size / symbol_size, total_symbols, rev_sym_cmp);
+  print_array_important_stuff(symbols_array, specs, total_symbols);
 }
 
-void  print_array_important_stuff(const void **symbols_array, const t_spec *specs, const size_t total_symbols)
+void  print_array_important_stuff(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols)
 {
   size_t    idx;
   uint8_t   st_info;
@@ -156,8 +166,8 @@ void  print_array_important_stuff(const void **symbols_array, const t_spec *spec
   idx = 0;
   while (idx < total_symbols)
   {
-    st_info = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx])->st_info : ((Elf64_Sym *)symbols_array[idx])->st_info;
-    st_shndx = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx])->st_shndx : ((Elf64_Sym *)symbols_array[idx])->st_shndx;
+    st_info = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx].sym)->st_info : ((Elf64_Sym *)symbols_array[idx].sym)->st_info;
+    st_shndx = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx].sym)->st_shndx : ((Elf64_Sym *)symbols_array[idx].sym)->st_shndx;
 
     st_shndx = specs->e == LITTLE ? st_shndx : endian_swap16(st_shndx);
 
@@ -167,12 +177,13 @@ void  print_array_important_stuff(const void **symbols_array, const t_spec *spec
       printf("Symbol is defined: ");
       type = specs->arch == X32_BIT ? ELF32_ST_TYPE(st_info) : ELF64_ST_TYPE(st_info);
       if (type == STT_FUNC)
-        printf("T ! it's a function\n");
+        printf("T ! it's a function");
       else
-        printf("i dunno, something else\n");
+        printf("i dunno, something else");
     }
     else if (bind == STB_GLOBAL)
-      printf("Symbol is undef: U\n");
+      printf("Symbol is undef: U");
+    printf("\tname: %s\n", symbols_array[idx].name); // invalid read. ofcourse... 
     ++idx;
   }
   printf("there were %lu symbols in the array\n", idx);
