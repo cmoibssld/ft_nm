@@ -24,10 +24,17 @@ typedef enum {
 } t_elf_arch;
 
 typedef struct elf_file_key_spec {
+  char*         filename;
   t_elf_endian  e;
   t_elf_arch    arch;
   uint16_t      type;
 } t_spec;
+
+typedef struct {
+    void *sym;
+    char *name;
+    uint64_t value;
+} t_nm_sym;
 
 int   ft_error(char *str, int error_code);
 
@@ -37,6 +44,10 @@ int   putstr(char *str, int fd);
 
 void  check_elf(unsigned char *addr, int fd, t_spec *spec, off_t file_size);
 
-void  core_engine(char *addr, int fd, off_t size);
+void  core_engine_32(char *addr, int fd, off_t size, t_spec *spec);
+
+void  core_engine_64(char *addr, int fd, off_t size, t_spec *spec);
+
+int   compare_symbols(const void *a, const void *b);
 
 #endif

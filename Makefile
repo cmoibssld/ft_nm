@@ -13,7 +13,7 @@ DEP_DIR			=	${BUILD_DIR}/dep
 ######  SOURCES  ######
 #######################
 
-SRCS 			=	main.c utils.c check.c core.c
+SRCS 			=	main.c utils.c check_elf.c core_32.c core_64.c sort_output.c
 
 HEADERS			=	main.h
 
