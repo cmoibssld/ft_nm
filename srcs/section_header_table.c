@@ -22,32 +22,29 @@
 // The location of the section in the ELF file image is given bt the section header variable: sh_offset.
 // Name are interesting but the first thing to check for each section in the table is the sh_type. It will tell us wether a section is about.. A symbol : SHT_SYMTAB ! 
 
-
-
-t_section_table_status  read_as_32bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info)
+ const char *  get_string_table(const char* loaded_file, const void * section_header, const t_spec *specs, const t_section_table_data *info)
 {
-  const Elf32_Shdr  *section_header;
-  uint16_t          i;
-  Elf32_Word        type;
+  const void * sh_table;
 
-  section_header = (Elf32_Shdr *)(loaded_file + info->address);
-  i = 0;
-  while (i < info->total_entry)
+  sh_table = loaded_file + info->address;
+  if (specs->arch == X32_BIT)
   {
-    if (loaded_size < info->address + i * sizeof(Elf32_Shdr))
-      return (SIZE_ERROR);
-    type = section_header[i].sh_type; // == SHT_SYMTAB;
-    if (!little_endian)
-      endian_swap32(type);
-    if (type == SHT_SYMTAB)
+    if (specs->e == LITTLE)
     {
-      // printf("I found a symbol (table?)!");
-      // look_for_symbols(loaded_file, section_header[i].sh_name, section_header[i].sh_offset, section_header[i].sh_offset);
-      // look_for_name(loaded_file, info->string_index, section_header[i].sh_name);
+      return (loaded_file + (((Elf32_Shdr *)(sh_table))[((Elf32_Shdr *)(section_header))->sh_link]).sh_offset);
     }
-    i++;
+    else
+      return (loaded_file + endian_swap32((((Elf32_Shdr *)(sh_table))[((Elf32_Shdr *)(section_header))->sh_link]).sh_offset));
   }
-  return (CORRECT);
+  else
+  {
+    if (specs->e == LITTLE)
+    {
+      return (loaded_file + (((Elf64_Shdr *)(sh_table))[((Elf64_Shdr *)(section_header))->sh_link]).sh_offset);
+    }
+    else
+      return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[((Elf64_Shdr *)(section_header))->sh_link]).sh_offset));
+  }
 }
 
 t_section_table_status  symbol_table_id(const uint16_t st_info, const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
@@ -145,8 +142,8 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   // print_array_important_stuff(symbols_array, specs, total_symbols);
   // must RETURN CORRECT
   free(symbols_array);
-  if (specs->arch == X32_BIT)
-    return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
+  // if (specs->arch == X32_BIT)
+  //   return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   if (specs->arch == X64_BIT)
     return (read_as_64bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   return (TABLE_INCOMPLETE);

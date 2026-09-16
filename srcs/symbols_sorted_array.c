@@ -8,6 +8,7 @@
 #include "endian.h"
 #include "identification.h"
 #include "section_header_info.h"
+#include "section_header_table.h"
 #include "sorting.h"
 #include "symbols_sorted_array.h"
 
@@ -113,22 +114,18 @@ void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *
     // reached a section with symbol, copy the address of the pointer into the symbol_array
     {
       section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size;
-      if (specs->arch == X32_BIT)
-        string_table = specs->e == LITTLE ? loaded_file + ((Elf32_Shdr *)(&section_header[((Elf32_Shdr *)&section_header[i])->sh_link]))->sh_offset : loaded_file + endian_swap32(((Elf32_Shdr *)(&section_header[((Elf32_Shdr *)&section_header[i])->sh_link]))->sh_offset );  
-      else
-        string_table = specs->e == LITTLE ? loaded_file + ((Elf64_Shdr *)(&section_header[((Elf64_Shdr *)&section_header[i])->sh_link]))->sh_offset : loaded_file + endian_swap32(((Elf64_Shdr *)(&section_header[((Elf64_Shdr *)&section_header[i])->sh_link]))->sh_offset );  // so fucking complicated
-        
+      string_table = get_string_table(loaded_file, section_header, specs, info);
       symbol_idx_in_section = 1; // index 0 is always a NULL symbol
       while (symbol_idx_in_section * symbol_size < section_size)
       {
         if (specs->arch == X32_BIT)
         {
           symbol_array[symbol_array_idx].sym = specs->e == LITTLE ? &((Elf32_Sym *)(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf32_Sym *)(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
-          symbol_array[symbol_array_idx].name = string_table + (((Elf32_Sym *)&symbol_array[symbol_array_idx].sym)->st_name);
+          symbol_array[symbol_array_idx].name = specs->e == LITTLE ? string_table + ((Elf32_Sym *)(symbol_array[symbol_array_idx].sym))->st_name : string_table +endian_swap32(((Elf32_Sym *)(symbol_array[symbol_array_idx].sym))->st_name);
         }
         else {
           symbol_array[symbol_array_idx].sym = specs->e == LITTLE ? &((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
-          symbol_array[symbol_array_idx].name = string_table + (((Elf64_Sym *)&symbol_array[symbol_array_idx].sym)->st_name);
+          symbol_array[symbol_array_idx].name = specs->e == LITTLE ? string_table + ((Elf64_Sym *)(symbol_array[symbol_array_idx].sym))->st_name : string_table + endian_swap32(((Elf64_Sym *)(symbol_array[symbol_array_idx].sym))->st_name);
           //assign name -> no copy of the string
         }
         ++symbol_idx_in_section;
