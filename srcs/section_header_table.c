@@ -139,11 +139,8 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   if (symbols_array == NULL)
     return(MEMORY_ALLOC_ERROR);
   sort_array(symbols_array, specs, total_symbols, opt);
-  // print_array_important_stuff(symbols_array, specs, total_symbols);
-  // must RETURN CORRECT
+  print_array_important_stuff(symbols_array, specs, total_symbols);
   free(symbols_array);
-  // if (specs->arch == X32_BIT)
-  //   return (read_as_32bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   if (specs->arch == X64_BIT)
     return (read_as_64bit(loaded_file, loaded_size, specs->e == LITTLE, info));
   return (TABLE_INCOMPLETE);

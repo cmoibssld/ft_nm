@@ -141,15 +141,16 @@ void  sort_array(s_symbol *symbols_array, const t_spec *specs, const size_t tota
   size_t  symbol_size;
   size_t  array_size;
 
+  (void)total_symbols;
   if (opt->p == true)
     return ;
   symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
   array_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym **) : sizeof(Elf64_Sym **);
   if (opt->r == false)
-    qsort(&symbols_array, array_size/symbol_size, total_symbols, sym_compare); // PROBLEM: cannot sort only with Elf32/64_Sym
+    qsort(&symbols_array, array_size/symbol_size, symbol_size, sym_compare);
   else
-    qsort(&symbols_array, array_size / symbol_size, total_symbols, rev_sym_cmp);
-  print_array_important_stuff(symbols_array, specs, total_symbols);
+    qsort(&symbols_array, array_size/symbol_size, symbol_size, rev_sym_cmp);
+  printf("Sorting as took place\n");
 }
 
 void  print_array_important_stuff(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols)

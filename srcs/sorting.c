@@ -9,6 +9,7 @@ int  sym_compare(const void *sym_1, const void *sym_2)
 
   s1 = ((s_symbol *)sym_1)->name;
   s2 = ((s_symbol *)sym_2)->name;
+  printf("Comparing %s and %s\n", s1, s2);
   
   return (ft_strncmp(s1, s2, ft_strlen(s1)));
 }
