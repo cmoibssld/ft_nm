@@ -1,4 +1,5 @@
 #include <elf.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -19,7 +20,7 @@
 ssize_t  looping_on_sections(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
 {
   size_t      total_symbols;
-  uint16_t    i;
+  size_t      i;
   size_t      symbol_size;
   uint32_t    sh_type;
   const void  *section_header;
@@ -30,9 +31,8 @@ ssize_t  looping_on_sections(const char *loaded_file, const size_t loaded_size, 
 
   while (i < info->total_entry)
   {
-    if (loaded_size < info->address + i * symbol_size)
-      return (-1);
-    // Check if header is symbols aka SHT_SYMTAB
+    if (loaded_size <= info->address + (i + 1) * symbol_size) // Equal to loaded_size cannot be reached
+      return (-1);                                            // i + 1 because symbol must fit entirely
     section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[i] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[i];
     sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap32(sh_type);
@@ -46,11 +46,11 @@ ssize_t  looping_on_sections(const char *loaded_file, const size_t loaded_size, 
 
 ssize_t  looping_on_symbols(const void *section_header, const size_t loaded_size, const t_spec *specs, const size_t symbol_size)
 {
-  uint32_t  section_size;
-  uint16_t  i;
+  uint64_t  section_size; // Elf64_Shdr->sh_size is an Elf64_Xword so uint64_t. Not optimal for 32 bits but whatever.
+  size_t    i;
   bool      out_of_bound;
 
-  section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size;
+  section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size; 
   section_size = specs->e == LITTLE ? section_size: endian_swap32(section_size);
   i = 0;
   while (i * symbol_size < section_size)
@@ -81,7 +81,7 @@ s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const
   if (symbols_count == -1)
     return (NULL);
   else
-    *total_symbols = symbols_count;
+    *total_symbols = (size_t)symbols_count;
   // ptr_symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
   ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
   if (ophelia == NULL)
@@ -92,9 +92,9 @@ s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const
 
 void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info)
 {
-  uint16_t    i;
-  uint16_t    symbol_idx_in_section;
-  uint16_t    symbol_array_idx;
+  size_t      i;
+  size_t      symbol_idx_in_section;
+  size_t      symbol_array_idx;
   uint16_t    sh_type;
   size_t      section_size;
   size_t      symbol_size;
@@ -110,7 +110,7 @@ void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *
    section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[i] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[i];
     sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap32(sh_type);
-    if (sh_type == SHT_SYMTAB || sh_type == SHT_DYNSYM)
+    if (sh_type == SHT_SYMTAB)// || sh_type == SHT_DYNSYM)
     // reached a section with symbol, copy the address of the pointer into the symbol_array
     {
       section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size;
@@ -126,7 +126,7 @@ void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *
         else {
           symbol_array[symbol_array_idx].sym = specs->e == LITTLE ? &((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[symbol_idx_in_section] : &((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[symbol_idx_in_section];
           symbol_array[symbol_array_idx].name = specs->e == LITTLE ? string_table + ((Elf64_Sym *)(symbol_array[symbol_array_idx].sym))->st_name : string_table + endian_swap32(((Elf64_Sym *)(symbol_array[symbol_array_idx].sym))->st_name);
-          //assign name -> no copy of the string
+          // So not clean... Don't see a better way except doing multiples function/files so...
         }
         ++symbol_idx_in_section;
         ++symbol_array_idx;
@@ -136,20 +136,14 @@ void  fill_array(s_symbol *symbol_array, const char *loaded_file, const t_spec *
   } 
 }
 
-void  sort_array(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols, const t_options *opt)
+void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_options *opt)
 {
-  size_t  symbol_size;
-  size_t  array_size;
-
-  (void)total_symbols;
   if (opt->p == true)
     return ;
-  symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
-  array_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym **) : sizeof(Elf64_Sym **);
   if (opt->r == false)
-    qsort(&symbols_array, array_size/symbol_size, symbol_size, sym_compare);
+    qsort(symbols_array, total_symbols, sizeof(s_symbol), sym_compare); // total_symbols => because sizeof(symbols_array) / sizeof(symbols_array[0]) = total_symbols
   else
-    qsort(&symbols_array, array_size/symbol_size, symbol_size, rev_sym_cmp);
+    qsort(symbols_array, total_symbols, sizeof(s_symbol), rev_sym_cmp);
   printf("Sorting as took place\n");
 }
 

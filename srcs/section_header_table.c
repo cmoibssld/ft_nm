@@ -34,7 +34,7 @@
       return (loaded_file + (((Elf32_Shdr *)(sh_table))[((Elf32_Shdr *)(section_header))->sh_link]).sh_offset);
     }
     else
-      return (loaded_file + endian_swap32((((Elf32_Shdr *)(sh_table))[((Elf32_Shdr *)(section_header))->sh_link]).sh_offset));
+      return (loaded_file + endian_swap32((((Elf32_Shdr *)(sh_table))[endian_swap32(((Elf32_Shdr *)(section_header))->sh_link)]).sh_offset)); // swap both offset: sh_link and sh_offset
   }
   else
   {
@@ -43,8 +43,8 @@
       return (loaded_file + (((Elf64_Shdr *)(sh_table))[((Elf64_Shdr *)(section_header))->sh_link]).sh_offset);
     }
     else
-      return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[((Elf64_Shdr *)(section_header))->sh_link]).sh_offset));
-  }
+      return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[endian_swap64(((Elf64_Shdr *)(section_header))->sh_link)]).sh_offset));
+    }
 }
 
 t_section_table_status  symbol_table_id(const uint16_t st_info, const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
@@ -138,7 +138,9 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   symbols_array = create_array(loaded_file, loaded_size, specs, info, &total_symbols);
   if (symbols_array == NULL)
     return(MEMORY_ALLOC_ERROR);
-  sort_array(symbols_array, specs, total_symbols, opt);
+  print_array_important_stuff(symbols_array, specs, total_symbols);
+  printf("Now sorting\n");
+  sort_array(symbols_array, total_symbols, opt);
   print_array_important_stuff(symbols_array, specs, total_symbols);
   free(symbols_array);
   if (specs->arch == X64_BIT)

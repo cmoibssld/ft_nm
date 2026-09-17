@@ -38,9 +38,13 @@ u is undefined only.
 Overlap but not equivalent
 
 
-##### Next steps:
+##### Previous steps:
 -> watch for potential refactor.
 -> create a table of pointer. Put all pointers to symbols headers inside it. Then sort it by name (st_name inside string table).
+
+##### Current steps:
+-> Ok table of struct with associate symbols and name is created. However not all name is given. Why ? Why can't I find the debug symbols for instance
+-> Refactor fill array function. Not secure enough: string can be not /0 null terminated, hence an invalid read, and there is no return option in case filling fails (out of bound, wrong link). Also split looping on section table and looping inside section.
 
 #### Sources and tips:
 - https://kib.kiev.ua/x86docs/ARM/abi-aa/aaelf64.pdf
