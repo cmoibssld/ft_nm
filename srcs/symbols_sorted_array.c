@@ -147,6 +147,7 @@ void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_opt
   printf("Sorting as took place\n");
 }
 
+// Go for output formating. This function is to be only use for debugging after refactor of the fil part
 void  print_array_important_stuff(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols)
 {
   size_t    idx;
