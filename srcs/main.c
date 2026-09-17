@@ -32,10 +32,15 @@ int main(int argc, char **argv) {
 
     check_elf(addr, fd, &spec, st.st_size);
 
+    bool swap = 0;
+
+    if (spec.e == BIG)
+        swap = 1;
+
     if (spec.arch == X64_BIT)
-        core_engine_64(addr, fd, st.st_size, &spec);
+        core_engine_64(addr, fd, st.st_size, &spec, swap);
     else if (spec.arch == X32_BIT)
-        core_engine_32(addr, fd, st.st_size, &spec);
+        core_engine_32(addr, fd, st.st_size, &spec, swap);
 
     close(fd);
     return (0);
