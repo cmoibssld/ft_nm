@@ -17,6 +17,6 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
 
 const void      *get_symbol_ptr(const char *loaded_file, const void *section_header, const size_t idx, const t_spec *specs);
 const char      *get_symbol_name(const void *symbol_header, const char *strtab, const t_spec *specs);
-const char      *get_section_name(const char *loaded_file, const void *section_header, const t_spec *specs);
+const char      *get_section_name( const void *section_header, const char *strtab, const t_spec *specs);
 
 #endif

@@ -5,6 +5,8 @@
 #include "endian.h"
 #include "filling_array.h"
 #include "identification.h"
+#include "libft.h"
+#include "section_header_info.h"
 #include "section_header_table.h"
 
 FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info)
@@ -49,8 +51,8 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
      symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
      symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
      // maybe if symbol name is voided give it the section anme ?
-     // if (symbol_array[*s_array_idx].name == NULL)
-     //   symbol_array[*s_array_idx].name = get_section_name(loaded_file, section_header, specs);
+     if (ft_strlen(symbol_array[*s_array_idx].name) == 0)
+       symbol_array[*s_array_idx].name = get_section_name(section_header, strtab, specs); // works but not the way...
      ++(*s_array_idx);
      ++symbol_idx;
   }
@@ -92,5 +94,23 @@ const char  *get_symbol_name(const void *symbol_header, const char *strtab, cons
       return (strtab + endian_swap32(((Elf64_Sym *)symbol_header)->st_name));
     else
       return (strtab + ((Elf64_Sym *)symbol_header)->st_name);
+  }
+}
+
+const char  *get_section_name(const void *section_header, const char *strtab, const t_spec *specs)
+{
+  if (specs->arch == X32_BIT)
+  {
+    if (specs->e == BIG)
+      return (strtab + endian_swap32(((Elf32_Shdr *)section_header)->sh_name));
+    else
+      return (strtab + ((Elf32_Shdr *)section_header)->sh_name);
+  }
+  else
+  {
+    if (specs->e == BIG)
+      return (strtab + endian_swap32(((Elf64_Shdr *)section_header)->sh_name));
+    else
+      return (strtab + ((Elf64_Shdr *)section_header)->sh_name);
   }
 }

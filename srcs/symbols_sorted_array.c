@@ -80,16 +80,16 @@ s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const
 
   symbols_count = looping_on_sections(loaded_file, loaded_size, specs, info);
   if (symbols_count == -1)
-    return (NULL);
+    return (NULL); // out of bound
   else
     *total_symbols = (size_t)symbols_count;
   // ptr_symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
   ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
   if (ophelia == NULL)
-    return (NULL);
-  // fill_array(ophelia, loaded_file, specs, info); // limits where tested before, no need for re-check during second passinge
+    return (NULL); // two types of error... change this
   if (fill_array_per_section(ophelia, loaded_file, specs, info) != FILLING_OK)
   {
+    // but never happens... There is no allocation memory, out of bound is verified before... Maybe non-null terminated string?
     free(ophelia);
     return (NULL);
   }
@@ -104,7 +104,7 @@ void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_opt
     qsort(symbols_array, total_symbols, sizeof(s_symbol), sym_compare); // total_symbols => because sizeof(symbols_array) / sizeof(symbols_array[0]) = total_symbols
   else
     qsort(symbols_array, total_symbols, sizeof(s_symbol), rev_sym_cmp);
-  printf("Sorting as took place\n");
+  // printf("Sorting as took place\n");
 }
 
 // Go for output formating. This function is to be only use for debugging after refactor of the fil part

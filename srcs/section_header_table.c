@@ -83,52 +83,6 @@ t_section_table_status  symbol_table_id(const uint16_t st_info, const bool littl
   return (CORRECT);
 }
 
-t_section_table_status  read_as_64bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info)
-{
-  const Elf64_Shdr  *section_header;
-  const char        *strtab;
-  const Elf64_Sym   *symbol_header;
-  uint16_t          i; // index in section header table
-  uint16_t          j; // index in symbol table
-  Elf64_Word        type;
-
- // alloc done to have a table of which symbol to look for. Then the loop after is only on that table
-
-  section_header = (Elf64_Shdr *)(loaded_file + info->address);
-  i = 0;
-  while (i < info->total_entry)
-  {
-    if (info->address + i * sizeof(Elf64_Shdr) > loaded_size)
-      return (SIZE_ERROR);
-    type = section_header[i].sh_type;
-    if (!little_endian)
-      type = endian_swap32(type);
-    if (type == SHT_SYMTAB) // || type == SHT_DYNSYM) // SHT_DYNSM is an option actually... aka a BONUS
-    {
-      if (!little_endian)
-        strtab = loaded_file + endian_swap64((&section_header[endian_swap32(section_header[i].sh_link)])->sh_offset);
-      else
-        strtab = loaded_file + (&section_header[section_header[i].sh_link])->sh_offset;
-      // printf("I found a symbol table! There is this much %d bytes in it\n", (uint16_t)section_header[i].sh_size);
-      j = 1; // fist one of the table is all 0. Maybe should I check it ?
-      symbol_header = (Elf64_Sym *)(loaded_file + section_header[i].sh_offset);
-      while (j * sizeof(Elf64_Sym) < section_header[i].sh_size) // counting the number of symbols (indirect)
-      {
-        if (section_header[i].sh_offset + j * sizeof(Elf64_Sym) > loaded_size)
-          return (SIZE_ERROR);
-        if (symbol_header[j].st_shndx != SHN_UNDEF) // this is 0 so no problem with endian ?
-          symbol_table_id(symbol_header[j].st_info,
-                 little_endian, false, &symbol_header[j], strtab);
-        else if (ELF64_ST_BIND(symbol_header[j].st_info) == STB_GLOBAL)
-          print_undefined_symbol(little_endian, false, &symbol_header[j], strtab);
-        ++j;
-      }
-    }
-    i++;
-  }
-  return (CORRECT);
-}
-
 t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, const t_options *opt)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
 {
@@ -141,9 +95,8 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   print_array_important_stuff(symbols_array, specs, total_symbols);
   printf("Now sorting\n");
   sort_array(symbols_array, total_symbols, opt);
-  print_array_important_stuff(symbols_array, specs, total_symbols);
+  print_array(symbols_array, total_symbols, specs, opt);
+  // print_array_important_stuff(symbols_array, specs, total_symbols);
   free(symbols_array);
-  if (specs->arch == X64_BIT)
-    return (read_as_64bit(loaded_file, loaded_size, specs->e == LITTLE, info));
-  return (TABLE_INCOMPLETE);
+  return (CORRECT);
 }
