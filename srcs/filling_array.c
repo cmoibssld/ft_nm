@@ -1,39 +1,96 @@
-#include "filling_array.h"
-#include "endian.h"
-#include "identification.h"
 #include <elf.h>
 #include <stddef.h>
 #include <stdint.h>
 
-FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info)
+#include "endian.h"
+#include "filling_array.h"
+#include "identification.h"
+#include "section_header_table.h"
+
+FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info)
 {
   size_t      section_idx;
-  size_t      section_size;
+  size_t      s_array_idx;
   const void  *section_header;
   uint16_t    sh_type;
+  const char  *strtab;
 
   section_idx = 0;
-  section_size = specs->arch == X32_BIT ? sizeof(Elf32_Shdr) : sizeof(Elf64_Shdr);
-  section_header = loaded_file + info->address;
+  s_array_idx = 0;
   while (section_idx < info->total_entry)
   {
-    // check if offset is out of loaded_size?
-    if (info->address + section_size * (section_idx + 1) >= loaded_size)
-      return (OUT_OF_BOUND);
-    sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)[section_idx].sh_type : ((Elf64_Shdr *)section_header)[section_idx].sh_type;
+    section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[section_idx] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[section_idx];
+    sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap16(sh_type);
     if (sh_type == SHT_SYMTAB)
-      if (fill_array_per_symbols(symbol_array, loaded_file, loaded_size, specs) != FILLING_OK)
+    {
+      strtab = get_string_table(loaded_file, section_header, specs, info);
+      if (fill_array_per_symbols(symbol_array, loaded_file, section_header, strtab, specs, &s_array_idx) != FILLING_OK)
           return (GENERAL_ERROR);
+    }
     ++section_idx;
-    
   }
   return (FILLING_OK);
 }
 
-FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const size_t loaded_size, const t_spec *specs)
+FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const void *section_header, const char *strtab, const t_spec *specs, size_t *s_array_idx)
 {
+  size_t    symbol_idx;
+  size_t    symbol_size;
+  uint16_t  section_size;
+
+  symbol_idx = 1;
+  symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym) : sizeof(Elf64_Sym);
+  section_size = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_size : ((Elf64_Shdr *)section_header)->sh_size;
+  section_size = specs->e == LITTLE ? section_size : endian_swap16(section_size);
+
+  while (symbol_idx * symbol_size < section_size)
+  {
+     symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
+     symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
+     // maybe if symbol name is voided give it the section anme ?
+     if (symbol_array[*s_array_idx].name == NULL)
+       symbol_array[*s_array_idx].name = get_section_name(loaded_file, section_header, specs);
+     ++(*s_array_idx);
+     ++symbol_idx;
+  }
   return (FILLING_OK);
 }
 
+const void  *get_symbol_ptr(const char *loaded_file, const void *section_header, const size_t idx, const t_spec *specs)
+{
+  if (specs->arch == X32_BIT)
+  {
+    if (specs->e == BIG)
+      return (&((Elf32_Sym *)(loaded_file + endian_swap32(((Elf32_Shdr *)section_header)->sh_offset)))[idx]);
+    else
+      return (&((Elf32_Sym *)(loaded_file + ((Elf32_Shdr *)section_header)->sh_offset))[idx]);
+  }
+  else
+  {
+    if (specs->e == BIG)
+      return (&((Elf64_Sym *)(loaded_file + endian_swap64(((Elf64_Shdr *)section_header)->sh_offset)))[idx]);
+    else
+      return (&((Elf64_Sym *)(loaded_file + ((Elf64_Shdr *)section_header)->sh_offset))[idx]);
+  }
+}
 
+// this is an interesting problem here:
+// nm always shows a name. If no name, I guess name give it a general name ? with .
+const char  *get_symbol_name(const void *symbol_header, const char *strtab, const t_spec *specs)
+{
+  if (specs->arch == X32_BIT)
+  {
+    if (specs->e == BIG)
+      return (strtab + endian_swap32(((Elf32_Sym *)symbol_header)->st_name));
+    else
+      return (strtab + ((Elf32_Sym *)symbol_header)->st_name);
+  }
+  else
+  {
+    if (specs->e == BIG)
+      return (strtab + endian_swap32(((Elf64_Sym *)symbol_header)->st_name));
+    else
+      return (strtab + ((Elf64_Sym *)symbol_header)->st_name);
+  }
+}

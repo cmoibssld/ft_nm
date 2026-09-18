@@ -3,6 +3,7 @@
 
 #include "section_header_info.h"
 # include "symbols_sorted_array.h"
+#include <uchar.h>
 
 typedef enum {
   OUT_OF_BOUND,
@@ -11,10 +12,11 @@ typedef enum {
   FILLING_OK,
 } FILLING_STATUS;
 
-FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info);
-FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const size_t loaded_size, const t_spec *specs);
+FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loaded_file, const t_spec *specs, const t_section_table_data *info);
+FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const void *section_header, const char *strtab, const t_spec *specs, size_t *s_array_idx);
 
-const void     *get_symbol_ptr(const char *loaded_file, const size_t loaded_size, const t_spec *specs);
-const char      *get_symbol_name(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info);
+const void      *get_symbol_ptr(const char *loaded_file, const void *section_header, const size_t idx, const t_spec *specs);
+const char      *get_symbol_name(const void *symbol_header, const char *strtab, const t_spec *specs);
+const char      *get_section_name(const char *loaded_file, const void *section_header, const t_spec *specs);
 
 #endif
