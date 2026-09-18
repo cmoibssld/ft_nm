@@ -73,6 +73,9 @@ void print_symbols_64(t_nm_sym *sort_array, int output_size, Elf64_Ehdr *hdr, El
 
     uint16_t e_shnum = SWAP16(hdr->e_shnum, swap);
 
+    if (output_size == 0) {
+        printf("No symbols\n");
+    }
 	for (int i = 0; i < output_size; i++) {
         
         Elf64_Sym *current_sym = sort_array[i].sym;
@@ -95,18 +98,31 @@ void print_symbols_64(t_nm_sym *sort_array, int output_size, Elf64_Ehdr *hdr, El
     free(sort_array);
 }
 
-void get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, char *strtab, char *shstrtab, bool swap) {
+int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, char *strtab, char *shstrtab, bool swap, off_t size, t_spec *spec, uint64_t strtab_size) {
 
     uint64_t sh_size = SWAP64(symtab->sh_size, swap);
     uint64_t sh_entsize = SWAP64(symtab->sh_entsize, swap);
     uint64_t sh_offset = SWAP64(symtab->sh_offset, swap);
 
+    if (sh_entsize == 0) {
+        print_error("ft_nm: error, division by zero\n");
+        return (1);
+    }
+
 	int sym_count = sh_size / sh_entsize;
+    
+    if (sh_offset > size || sh_size > size - sh_offset) {
+        nm_error(spec->filename, "has a section extending past end of file", "warning: ");
+        return (1);
+    }
 	Elf64_Sym *symbols = (Elf64_Sym *)((uint8_t *)hdr + sh_offset);
 
 	t_nm_sym *sort_array = malloc(sizeof(t_nm_sym) * sym_count);
-    if (!sort_array)
-        return;
+    if (!sort_array) {
+
+        print_error("ft_nm: malloc error\n");
+        return (1);
+    }
 
 	int output_size = 0;
 
@@ -114,6 +130,11 @@ void get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, c
         
         uint32_t st_name = SWAP32(symbols[i].st_name, swap);
 
+        if (st_name >= strtab_size) {
+
+            nm_error(spec->filename, "has a section extending past end of file", "warning: ");
+            return (1);
+        }
         char *name = strtab + st_name;
         unsigned char type = ELF64_ST_TYPE(symbols[i].st_info);
 
@@ -126,15 +147,18 @@ void get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, c
     }
 	
     print_symbols_64(sort_array, output_size, hdr, sections, shstrtab, swap);
-    return;
+    return(0);
 }
 
-void core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
+int core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
 
 	Elf64_Ehdr *hdr = (Elf64_Ehdr *)addr;
 
     Elf64_Shdr *sections = elf_sheader_64(hdr, size, swap);
-    if (!sections) return;
+    if (!sections) {
+        nm_error(spec->filename, "file format not recognized", 0);
+        return (1);
+    }
 
     char *shstrtab = NULL;
     uint16_t e_shstrndx = SWAP16(hdr->e_shstrndx, swap);
@@ -149,6 +173,8 @@ void core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
     char *strtab = NULL;
     uint16_t e_shnum = SWAP16(hdr->e_shnum, swap);
 
+    uint64_t str_size = 0;
+
     for (int i = 0; i < e_shnum; i++) {
         
         Elf64_Shdr *section = &sections[i];
@@ -160,7 +186,7 @@ void core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
             Elf64_Shdr *strtab_section = &sections[sh_link];
             
             uint64_t str_offset = SWAP64(strtab_section->sh_offset, swap);
-            uint64_t str_size = SWAP64(strtab_section->sh_size, swap);
+            str_size = SWAP64(strtab_section->sh_size, swap);
 
             if (strtab_section && str_offset + str_size <= (uint64_t)size) {
                 strtab = (char *)((uint8_t *)hdr + str_offset);
@@ -170,9 +196,12 @@ void core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
     }
     if (!symtab || !strtab || !shstrtab) {
         printf("ft_nm: %s: no symbols\n", spec->filename);
-        return;
+        return (1);
     }
 
-	get_symbols_64(hdr, symtab, sections, strtab, shstrtab, swap);
-    return ;
+	if (get_symbols_64(hdr, symtab, sections, strtab, shstrtab, swap, size, spec, str_size)) {
+        nm_error(spec->filename, "no symbols", 0);
+        return (1);
+    }
+    return (0);
 }

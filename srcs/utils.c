@@ -2,7 +2,8 @@
 
 int putstr(char *str, int fd) {
     int buf_size = ft_strlen(str);
-    write(fd, str, buf_size);
+    if (str && buf_size > 0)
+        write(fd, str, buf_size);
     return (buf_size);
 }
 
@@ -15,9 +16,42 @@ int ft_strlen(char *str) {
 }
 
 int ft_error(char *str, int error_code) {
-    write(2, str, ft_strlen(str));
+    if (str && ft_strlen(str) > 0);
+        write(2, str, ft_strlen(str));
     exit(error_code);
 } 
+
+int print_error(char *str) {
+
+    if (str && ft_strlen(str) > 0)
+        write(2, str, ft_strlen(str));
+    return (ft_strlen(str));
+}
+
+int nm_error(char *filename, char *custom_error, char *flag) {
+
+    char msg[1024];
+    if (flag)
+        sprintf(msg, "%s %s%s %s \n", "nm:", flag, filename, custom_error);
+    else
+        sprintf(msg, "%s %s: %s \n", "nm:", filename, custom_error);
+    print_error(msg);
+
+    return (0);
+}
+
+int nm_file_error(char *filename, char *custom_error, char *flag) {
+
+    char msg[1024];
+    if (flag)
+        sprintf(msg, "%s %s'%s' %s \n", "nm:", flag, filename, custom_error);
+    else
+        sprintf(msg, "%s '%s': %s \n", "nm:", filename, custom_error);
+    print_error(msg);
+
+    return (0);
+}
+
 
 uint16_t swap16(uint16_t v) {
     return (v << 8) | (v >> 8);

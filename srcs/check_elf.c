@@ -74,30 +74,30 @@ void	print_elf(t_spec *spec) {
 	}
 }
 
-void	check_elf(unsigned char *addr, int fd, t_spec *spec, off_t file_size) {
+int	check_elf(unsigned char *addr, int fd, t_spec *spec, off_t file_size) {
 
 	if (file_size <= EI_NIDENT) {
-		close(fd);
-		ft_error("Size error\n", 1);
-	}
+        nm_error(spec->filename, "has a section extending past end of file", "warning: ");
+        return (1);
+    }
 	// A RECHECK PEUT ETRE
 
 	if (!elf_check_file(addr)) {
-        close(fd);
-        ft_error("Not ELF file\n", 1);
+        nm_error(spec->filename, "file format not recognized", 0);
+        return (1);
     }
 
     spec->e = elf_check_endian((Elf32_Ehdr *)addr);
     if (spec->e == INVALID_ARCH) {
-        close(fd);
-        ft_error("Invalid endian arch\n", 1);
+        nm_error(spec->filename, "invalid endian architecture", 0);
+        return (1);
     }
 
     spec->arch = elf_check_architecture(addr); 
     if (spec->arch == INVALID_ARCH) {
-        close(fd);
-        ft_error("Architecture Error\n", 1);
+        nm_error(spec->filename, "architecture not supported", 0);
+        return (1);
     }
-	
-	print_elf(spec);
+	return (0);
+	//print_elf(spec);
 }

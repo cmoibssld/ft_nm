@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 
 	Elf64_Ehdr *test = (Elf64_Ehdr *)addr;
 	
-	test->e_ehsize = 1000;
+	//test->e_shoff = 0;
 
 	core_engine_64(addr, fd, st.st_size, 0);
 
