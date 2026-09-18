@@ -18,6 +18,7 @@ DEP_DIR			=	${BUILD_DIR}/dep
 SRCS 			=	main.c 					\
 					endian.c 				\
 					errors.c 				\
+					filling_array.c			\
 					identification.c 		\
 					output_formatting.c 	\
 					section_header_table.c 	\
@@ -28,6 +29,7 @@ SRCS 			=	main.c 					\
 HEADERS			=	main.h 					\
 					endian.h 				\
 					errors.h 				\
+					filling_array.h			\
 					identification.h 		\
 					output_formatting.c 	\
 					section_header_table.h	\
