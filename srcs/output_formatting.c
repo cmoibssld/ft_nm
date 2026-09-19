@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "output_formatting.h"
 #include "endian.h"
@@ -12,9 +13,13 @@
 // New print function
 // For function, initialized function or else, I need to look at the section...
 
-char  get_sym_flags(const char bind, const char type, const uint16_t sh_shndx)
+char  get_sym_flags(const char bind, const char type, const uint16_t sh_shndx, const char *name)
 // uint64_t not optimal whem uint32_t but whatever, that's not that important
 {
+  if (sh_shndx == SHT_NOBITS)
+    return (bind == STB_LOCAL ? 'b' : 'B');
+  if (st_shndx == SHT_PROGBITS
+    return ('N');
   if (sh_shndx == SHN_UNDEF)
     return ('U');
   if (bind == STB_WEAK)
@@ -28,8 +33,7 @@ char  get_sym_flags(const char bind, const char type, const uint16_t sh_shndx)
   return ('?');
 }
 
-int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section,
-               const char *name, const t_elf_endian e, const t_options *opt)
+int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
 {
   int         res;
   char        letter;
@@ -41,9 +45,11 @@ int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section,
   (void)opt;
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  letter = get_sym_flags(bind, type, sym->st_shndx);
+  letter = get_sym_flags(bind, type, sym->st_shndx, name);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X32_BIT, opt);      
+  if (opt->a == false && letter == 'N')
+    return (0);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
   if (letter == 'U' || letter == 'u')
     res = printf("%18c %s\n", letter, name);
@@ -52,8 +58,7 @@ int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section,
   return (res);
 }      
 
-int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section,
-               const char *name, const t_elf_endian e, const t_options *opt)
+int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
 {
   int         res;
   char        letter;
@@ -65,7 +70,7 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section,
   (void)opt;
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  letter = get_sym_flags(bind, type, sym->st_shndx);
+  letter = get_sym_flags(bind, type, sym->st_shndx, name);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X64_BIT, opt);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
@@ -76,8 +81,7 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section,
   return (res);
 }
 
-int  print_array(const s_symbol *symbols, const size_t total_symbols,
-                 const t_spec *specs, const t_options *opt)
+int  print_array(const s_symbol *symbols, const size_t total_symbols, const t_spec *specs, const t_options *opt)
 {
   size_t    i;
   int      value;
