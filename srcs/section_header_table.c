@@ -47,42 +47,6 @@
     }
 }
 
-t_section_table_status  symbol_table_id(const uint16_t st_info, const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
-{
-  uint8_t  type;
-  uint8_t  binding;
-
-  // (void)string_table;
-  if (x32 == true)
-  {
-    type = ELF32_ST_TYPE(st_info);
-    binding = ELF32_ST_BIND(st_info);
-  }
-  else
-  {
-    type = ELF64_ST_TYPE(st_info);
-    binding = ELF64_ST_BIND(st_info);
-  }
-  // if (type == STT_NOTYPE) // one byte, endianness doesn't matter
-  //   // print_undefined_symbol(binding, little_endian, x32, symbol_header, string_table);
-  //   printf("No specific type\n");
-  // else if (type == STT_OBJECT)
-  //   printf("Variables, array, etc. found !\n");
-  if (type == STT_FUNC) // only used now    
-    print_function_symbol(binding, little_endian, x32, symbol_header, string_table);
-  // else if (type == STT_SECTION)
-  //   printf("Symbol + section. What is this?\n");
-  // else if (type == STT_FILE)
-  //   printf("A file name ! Nice\n");
-  // else if (type == STT_COMMON)
-  //   printf("Common data object\n");
-  // else if (type == STT_TLS)
-  //   printf("Thread local data object okk...\n");
-  // else
-  //   printf("Symbol found\n");
-  return (CORRECT);
-}
-
 t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, const t_options *opt)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !
 {
@@ -92,8 +56,6 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   symbols_array = create_array(loaded_file, loaded_size, specs, info, &total_symbols);
   if (symbols_array == NULL)
     return(MEMORY_ALLOC_ERROR);
-  print_array_important_stuff(symbols_array, specs, total_symbols);
-  printf("Now sorting\n");
   sort_array(symbols_array, total_symbols, opt);
   print_array(symbols_array, total_symbols, specs, opt);
   // print_array_important_stuff(symbols_array, specs, total_symbols);

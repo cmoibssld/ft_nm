@@ -8,62 +8,15 @@
 #include "endian.h"
 #include "identification.h"
 #include "main.h"
-#include "section_header_table.h"
-
-t_section_table_status  print_function_symbol(const uint8_t binding, const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
-{
-  char symbol;
-  const char *name;
-
-  if (binding == STB_LOCAL)
-    symbol = 't';
-  else
-    symbol = 'T';
-  if (x32 == true)
-  {
-    name = string_table + ((const Elf32_Sym *)symbol_header)->st_name;
-    if (little_endian == false)
-      printf("%016X %c %s\n", endian_swap32(((const Elf32_Sym *)symbol_header)->st_value), symbol, name);
-    else
-      printf("%016X %c %s\n", ((const Elf32_Sym *)symbol_header)->st_value, symbol, name);
-  }
-  else
-  {
-    name = string_table + ((const Elf64_Sym *)symbol_header)->st_name;
-    if (little_endian == false)
-      printf("%016" PRIx64 " %c %s\n", endian_swap64(((const Elf64_Sym *)symbol_header)->st_value), symbol, name);
-    else
-      printf("%016" PRIx64" %c %s\n", ((const Elf64_Sym *)symbol_header)->st_value, symbol, name);
-    }
-    return (CORRECT);
-  }
-
-t_section_table_status  print_undefined_symbol(const bool little_endian, const bool x32, const void *symbol_header, const char *string_table)
-{
-  char symbol;
-  uint32_t  st_name;
-
-  symbol = 'U';
-  if (x32 == true)
-    st_name = ((const Elf32_Sym *)symbol_header)->st_name;
-  else
-    st_name = ((const Elf64_Sym *)symbol_header)->st_name;
-  if (!little_endian)
-    st_name = endian_swap32(st_name);
-  // printf("st_name=%u, strtab=%p, name='%s'\n",
-       // st_name, (void *)string_table, string_table + st_name);
-  printf("%18c %s\n", symbol, string_table + st_name);
-  return (CORRECT);
-}
-
-// Check that st_name is < strtab_size and that it's null terminated...
-
 
 // New print function
 // For function, initialized function or else, I need to look at the section...
 
-char  get_sym_sym(const char bind, const char type)
+char  get_sym_flags(const char bind, const char type, const uint16_t sh_shndx)
+// uint64_t not optimal whem uint32_t but whatever, that's not that important
 {
+  if (sh_shndx == SHN_UNDEF)
+    return ('U');
   if (bind == STB_WEAK)
     return (type == STT_OBJECT || type == STT_FUNC ? 'v' : 'w'); // more info, can be upper or lower
   if (type == STT_NOTYPE)
@@ -75,8 +28,10 @@ char  get_sym_sym(const char bind, const char type)
   return ('?');
 }
 
-int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
+int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section,
+               const char *name, const t_elf_endian e, const t_options *opt)
 {
+  int         res;
   char        letter;
   uint32_t    addr;
   const char  bind = ELF32_ST_BIND(sym->st_info);
@@ -84,17 +39,23 @@ int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name
 
   (void)section;
   (void)opt;
-  letter = get_sym_sym(bind, type);
+  if (bind >= STB_LOPROC && bind <= STB_HIPROC)
+    return (0);
+  letter = get_sym_flags(bind, type, sym->st_shndx);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X32_BIT, opt);      
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (printf("%016X %c %s\n", addr, letter, name) == -1)
-    return (-1);
-  return (0);
+  if (letter == 'U' || letter == 'u')
+    res = printf("%18c %s\n", letter, name);
+  else
+    res = (printf("%016X %c %s\n", addr, letter, name) == -1);
+  return (res);
 }      
 
-int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
+int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section,
+               const char *name, const t_elf_endian e, const t_options *opt)
 {
+  int         res;
   char        letter;
   uint64_t    addr;
   const char  bind = ELF64_ST_BIND(sym->st_info);
@@ -102,16 +63,21 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name
 
   (void)section;
   (void)opt;
-  letter = get_sym_sym(bind, type);
+  if (bind >= STB_LOPROC && bind <= STB_HIPROC)
+    return (0);
+  letter = get_sym_flags(bind, type, sym->st_shndx);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X64_BIT, opt);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  if (printf("%016" PRIx64 " %c %s\n", addr, letter, name) == -1)
-    return (-1);
-  return (0);
+  if (letter == 'U' || letter == 'u')
+    res = printf("%18c %s\n", letter, name);
+  else
+    res = printf("%016" PRIx64 " %c %s\n", addr, letter, name);
+  return (res);
 }
 
-int  print_array(const s_symbol *symbols, const size_t total_symbols, const t_spec *specs, const t_options *opt)
+int  print_array(const s_symbol *symbols, const size_t total_symbols,
+                 const t_spec *specs, const t_options *opt)
 {
   size_t    i;
   int      value;
