@@ -13,24 +13,55 @@
 // New print function
 // For function, initialized function or else, I need to look at the section...
 
-char  get_sym_flags(const char bind, const char type, const uint16_t sh_shndx, const char *name)
-// uint64_t not optimal whem uint32_t but whatever, that's not that important
+char  get_sym_flags(const char bind, const char type, const uint16_t st_shndx, const uint32_t sh_type, const uint64_t sh_flags)
+// uint64_t not optimal for flags in 32bits -> uint32_t but whatever, that's not that important
 {
-  if (sh_shndx == SHT_NOBITS)
-    return (bind == STB_LOCAL ? 'b' : 'B');
-  if (st_shndx == SHT_PROGBITS
-    return ('N');
-  if (sh_shndx == SHN_UNDEF)
-    return ('U');
-  if (bind == STB_WEAK)
-    return (type == STT_OBJECT || type == STT_FUNC ? 'v' : 'w'); // more info, can be upper or lower
-  if (type == STT_NOTYPE)
-    return ('U'); // 'u' is a GNU extension to ELF symbol bindings
-  else if (type == STT_OBJECT)
-    return (type == STB_LOCAL ? 'd' : 'D');
-  else if (type == STT_FUNC)
-    return (bind == STB_LOCAL ? 't' : 'T');
-  return ('?');
+  char   c;
+
+  if (bind == STB_GNU_UNIQUE)
+    c = 'u';
+  else if (bind == STB_WEAK)
+  {
+    c = 'W';
+    if (st_shndx == SHN_UNDEF)
+      c = 'w';
+  }
+  else if (bind == STB_WEAK && type == STT_OBJECT)
+  {
+    c = 'V';
+    if (st_shndx == SHN_UNDEF)
+      c = 'v';
+  }
+  else if (st_shndx == SHN_UNDEF)
+    c = 'U';
+  else if (st_shndx == SHN_ABS)
+    c = 'A';
+  else if (st_shndx == SHN_COMMON)
+    c = 'C';
+  else if (type == SHT_NOBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
+    c = 'B';
+  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
+    c = 'R'; // not sure ?
+  else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
+    c = 'D';
+  else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_EXECINSTR))
+    c = 'T';
+  else if (sh_type == SHT_DYNAMIC)
+    c = 'D';
+  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_MASKPROC)
+    c = 'G'; // not sure either. Only in .got that global variable are mention and G is for stuff like global var
+  else
+    c = '?';
+
+  if (bind == STB_LOCAL && c != '?')
+    c += 32;
+  
+  if (sh_type == SHT_PROGBITS && sh_flags == 0)
+    c = 'N';
+
+  // remaining: i . I . N . n . p . S/s  . - .
+  // i is not standart uni
+  return (c);
 }
 
 int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
@@ -45,7 +76,7 @@ int  print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name
   (void)opt;
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  letter = get_sym_flags(bind, type, sym->st_shndx, name);
+  letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type, section->sh_flags);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X32_BIT, opt);      
   if (opt->a == false && letter == 'N')
@@ -70,7 +101,7 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name
   (void)opt;
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  letter = get_sym_flags(bind, type, sym->st_shndx, name);
+  letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type, section->sh_flags);
   // if (letter == '\0')
   //   letter = look_for_something_else(sym, e, X64_BIT, opt);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
@@ -78,6 +109,7 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name
     res = printf("%18c %s\n", letter, name);
   else
     res = printf("%016" PRIx64 " %c %s\n", addr, letter, name);
+  printf("flags: %lu  ", section->sh_flags);
   return (res);
 }
 

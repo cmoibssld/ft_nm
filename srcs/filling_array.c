@@ -49,6 +49,8 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
   while (symbol_idx * symbol_size < section_size)
   {
     symbol_array[*s_array_idx].section = section_header;
+    printf("section h flags: %lu\n", ((Elf64_Shdr *)section_header)->sh_flags);
+    printf("s section flags: %lu\n", ((Elf64_Shdr *)(symbol_array[*s_array_idx].section))->sh_flags);
     symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
     symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
     // maybe if symbol name is voided give it the section anme ?
