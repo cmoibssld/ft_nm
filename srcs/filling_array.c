@@ -48,13 +48,14 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
 
   while (symbol_idx * symbol_size < section_size)
   {
-     symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
-     symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
-     // maybe if symbol name is voided give it the section anme ?
-     if (ft_strlen(symbol_array[*s_array_idx].name) == 0)
-       symbol_array[*s_array_idx].name = get_section_name(section_header, strtab, specs); // works but not the way...
-     ++(*s_array_idx);
-     ++symbol_idx;
+    symbol_array[*s_array_idx].section = section_header;
+    symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
+    symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
+    // maybe if symbol name is voided give it the section anme ?
+    if (ft_strlen(symbol_array[*s_array_idx].name) == 0)
+      symbol_array[*s_array_idx].name = get_section_name(section_header, strtab, specs); // works but not the way...
+    ++(*s_array_idx);
+    ++symbol_idx;
   }
   return (FILLING_OK);
 }

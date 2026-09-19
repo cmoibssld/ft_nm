@@ -12,6 +12,7 @@
 // an array of a struct by associating string-name in string table + pointer to symbol, can use sort easily because only comparing already created struct with correct point to string name (string_table + st_name). allocates once since allocate X struct in one array (so s_symbols * == the new array). Let's do that
 
 typedef struct {
+  const void  *section;
   const void  *sym;
   const char  *name;
 } s_symbol;
