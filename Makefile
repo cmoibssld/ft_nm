@@ -85,6 +85,10 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 		-c $< -o $@ \
 		-MF $(DEP_DIR)/$(notdir $(basename $<)).d -MT $@
 
+init:
+	git submodule init
+	git submodule update
+		
 $(LIBFT_LIB):
 	$(MAKE) -C $(LIBFT_DIR)
 		
@@ -104,4 +108,4 @@ big_endian:
 	
 re: fclean all
 
-.PHONY: all clean fclean re x86_64
+.PHONY: init all clean fclean re x86_64 big_endian
