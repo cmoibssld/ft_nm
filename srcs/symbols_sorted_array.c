@@ -76,14 +76,12 @@ s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const
 {
   s_symbol *ophelia;
   ssize_t  symbols_count;
-  // size_t   ptr_symbol_size;
 
   symbols_count = looping_on_sections(loaded_file, loaded_size, specs, info);
   if (symbols_count == -1)
     return (NULL); // out of bound
   else
     *total_symbols = (size_t)symbols_count;
-  // ptr_symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym *) : sizeof(Elf64_Sym *);
   ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL); // two types of error... change this
@@ -104,40 +102,4 @@ void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_opt
     qsort(symbols_array, total_symbols, sizeof(s_symbol), sym_compare); // total_symbols => because sizeof(symbols_array) / sizeof(symbols_array[0]) = total_symbols
   else
     qsort(symbols_array, total_symbols, sizeof(s_symbol), rev_sym_cmp);
-  // printf("Sorting as took place\n");
-}
-
-// Go for output formating. This function is to be only use for debugging after refactor of the fil part
-void  print_array_important_stuff(s_symbol *symbols_array, const t_spec *specs, const size_t total_symbols)
-{
-  size_t    idx;
-  uint8_t   st_info;
-  uint8_t   type;
-  uint8_t   bind;
-  uint16_t  st_shndx; // half, word are uint16_t
-
-  idx = 0;
-  while (idx < total_symbols)
-  {
-    st_info = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx].sym)->st_info : ((Elf64_Sym *)symbols_array[idx].sym)->st_info;
-    st_shndx = specs->arch == X32_BIT ? ((Elf32_Sym *)symbols_array[idx].sym)->st_shndx : ((Elf64_Sym *)symbols_array[idx].sym)->st_shndx;
-
-    st_shndx = specs->e == LITTLE ? st_shndx : endian_swap16(st_shndx);
-
-    bind = specs->arch == X32_BIT ? ELF32_ST_BIND(st_info) : ELF64_ST_BIND(st_info);
-    if (st_shndx != SHN_UNDEF)
-    {
-      printf("Symbol is defined: ");
-      type = specs->arch == X32_BIT ? ELF32_ST_TYPE(st_info) : ELF64_ST_TYPE(st_info);
-      if (type == STT_FUNC)
-        printf("T ! it's a function");
-      else
-        printf("i dunno, something else");
-    }
-    else if (bind == STB_GLOBAL)
-      printf("Symbol is undef: U");
-    printf("\tname: %s\n", symbols_array[idx].name); // invalid read. ofcourse... 
-    ++idx;
-  }
-  printf("there were %lu symbols in the array\n", idx);
 }

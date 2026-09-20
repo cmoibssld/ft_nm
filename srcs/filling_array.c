@@ -24,10 +24,12 @@ FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loade
     section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[section_idx] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[section_idx];
     sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap16(sh_type);
+    // if (specs->arch == X64_BIT)
+    //   printf("flags: %lu\n", ((Elf64_Shdr *)section_header)->sh_flags);
     if (sh_type == SHT_SYMTAB)
     {
       strtab = get_string_table(loaded_file, section_header, specs, info);
-      if (fill_array_per_symbols(symbol_array, loaded_file, section_header, strtab, specs, &s_array_idx) != FILLING_OK)
+      if (fill_array_per_symbols(symbol_array, loaded_file, section_header, loaded_file + info->address, strtab, specs, &s_array_idx) != FILLING_OK)
           return (GENERAL_ERROR);
     }
     ++section_idx;
@@ -35,7 +37,7 @@ FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loade
   return (FILLING_OK);
 }
 
-FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const void *section_header, const char *strtab, const t_spec *specs, size_t *s_array_idx)
+FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loaded_file, const void *section_header, const void *section_table, const char *strtab, const t_spec *specs, size_t *s_array_idx)
 {
   size_t    symbol_idx;
   size_t    symbol_size;
@@ -48,14 +50,14 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
 
   while (symbol_idx * symbol_size < section_size)
   {
-    symbol_array[*s_array_idx].section = section_header;
-    printf("section h flags: %lu\n", ((Elf64_Shdr *)section_header)->sh_flags);
-    printf("s section flags: %lu\n", ((Elf64_Shdr *)(symbol_array[*s_array_idx].section))->sh_flags);
     symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
     symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
+    symbol_array[*s_array_idx].section = get_section_ptr(symbol_array[*s_array_idx].sym, section_table, specs);
+    // printf("s section flags: %lu\n", ((Elf64_Shdr *)(symbol_array[*s_array_idx].section))->sh_flags);
     // maybe if symbol name is voided give it the section anme ?
     if (ft_strlen(symbol_array[*s_array_idx].name) == 0)
-      symbol_array[*s_array_idx].name = get_section_name(section_header, strtab, specs); // works but not the way...
+      symbol_array[*s_array_idx].name = get_section_name(symbol_array[*s_array_idx].section, strtab, specs); // works but not the way...
+
     ++(*s_array_idx);
     ++symbol_idx;
   }
@@ -97,6 +99,22 @@ const char  *get_symbol_name(const void *symbol_header, const char *strtab, cons
       return (strtab + endian_swap32(((Elf64_Sym *)symbol_header)->st_name));
     else
       return (strtab + ((Elf64_Sym *)symbol_header)->st_name);
+  }
+}
+
+const void  *get_section_ptr(const void *sym, const void *section_table, const t_spec *specs)
+{
+  uint16_t  st_shndx;
+  
+  if (specs->arch == X32_BIT)
+  {
+      st_shndx = specs->e == LITTLE ? ((Elf32_Sym *)sym)->st_shndx : endian_swap16(((Elf32_Sym *)sym)->st_shndx);
+      return (&((Elf32_Shdr *)section_table)[st_shndx]);
+  }
+  else
+  {
+      st_shndx = specs->e == LITTLE ? ((Elf64_Sym *)sym)->st_shndx : endian_swap16(((Elf64_Sym *)sym)->st_shndx);
+      return (&((Elf64_Shdr *)section_table)[st_shndx]);
   }
 }
 

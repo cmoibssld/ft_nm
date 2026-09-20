@@ -109,7 +109,7 @@ int  print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name
     res = printf("%18c %s\n", letter, name);
   else
     res = printf("%016" PRIx64 " %c %s\n", addr, letter, name);
-  printf("flags: %lu  ", section->sh_flags);
+  // printf("flags: %lu  ", section->sh_flags);
   return (res);
 }
 
