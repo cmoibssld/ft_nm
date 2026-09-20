@@ -10,6 +10,7 @@
 #include "filling_array.h"
 #include "identification.h"
 #include "section_header_info.h"
+#include "section_header_table.h"
 #include "sorting.h"
 #include "symbols_sorted_array.h"
 
@@ -91,7 +92,48 @@ s_symbol  *create_array(const char *loaded_file, const size_t loaded_size, const
     free(ophelia);
     return (NULL);
   }
+  if (check_strings_name(ophelia, *total_symbols, loaded_file, loaded_size) == false)
+  {
+    free(ophelia);
+    return (NULL);
+  }
   return (ophelia);
+}
+
+// check that string are null terminated ? -> check that they don't overlap + check that they don't go beyond file
+bool  check_strings_name(const s_symbol *symbol_array, const size_t total_symbols, const char *loaded_file, const size_t loaded_size)
+{
+  uint64_t    i;
+  const char  *end;
+
+  end = loaded_file + loaded_size;
+  for (size_t sym = 0; sym < total_symbols; ++sym)
+  {
+    if (symbol_array[sym].name == NULL)
+      continue ;
+    i = 0;
+    while (symbol_array[sym].name[i] != '\0')
+    {
+      if (&symbol_array[sym].name[i] == end)
+      {
+        perror("string name out of bound: ");
+        return (false);
+      }
+      ++i;
+    }
+    for (size_t j = 0; j < total_symbols; ++j)
+    {
+      if (j == sym || symbol_array[j].name == NULL)
+        continue ;
+      // if (overlapping_string_name(symbol_array[j].name, symbol_array[sym].name) == true)
+      // {
+      //   printf("Overlapping now: %lu with %lu\n", i, j);
+      //   perror("strings are overlapping: ");
+      //   return (false);
+      // }
+    }
+  }
+  return (true);
 }
 
 void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_options *opt)

@@ -1,26 +1,15 @@
 #include <elf.h>
 #include <inttypes.h> // For the PRIx64 macro...
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "endian.h"
 #include "identification.h"
-#include "main.h"
-#include "output_formatting.h"
 #include "section_header_info.h"
-#include "section_header_table.h"
 #include "symbols_sorted_array.h"
+#include "section_header_table.h"
+#include "output_formatting.h"
 
-// Elf32_Word and Elf64_Word is the same: uint16_t. GNE !
-
-
-// From what I have understand on the Section header table.
-// Indeed the section header table is an ELF header where are store as a table all the headers on the sections. They contain information on the section such as names, sizes, locations, etc.,.
-// The first information store, sh_name, aka the name of the function does not point to a string. It is not a name. It is an offset of a string in ... the section name string table. This section name string table ahas it's index define inside the ELF header: e_shstrndx.
-// The location of the section in the ELF file image is given bt the section header variable: sh_offset.
-// Name are interesting but the first thing to check for each section in the table is the sh_type. It will tell us wether a section is about.. A symbol : SHT_SYMTAB ! 
 
  const char *  get_string_table(const char* loaded_file, const void * section_header, const t_spec *specs, const t_section_table_data *info)
 {
@@ -45,7 +34,38 @@
     else
       return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[endian_swap64(((Elf64_Shdr *)(section_header))->sh_link)]).sh_offset));
     }
+}  
+
+bool  overlapping_string_name(const char *s1, const char *s2)
+{
+  size_t i;
+
+  i = 0;
+  if (s1 < s2)
+  {
+    while (s1[i] != '\0')
+    {
+      if (&s1[i] == s2)
+        return (true);
+      ++i;
+    }
+    return (&s1[i] == s2);
+  }
+  else
+  {
+    while (s2[i] != '\0')
+    {
+      if (&s2[i] == s1)
+        return (true);
+      ++i;
+    }
+    return (&s1[i] == s2);
+  }
+  // s1 < s2 is not strictly portable C -> undefined behavior. So must do both strings iterate.
+  // not really sure about that though... It seems obvious to me that address as hexa could be compared...
+  // In deed if s1 and s2 are the same object, there is no problem about it, which is the case here
 }
+
 
 t_section_table_status  read_table(const char *restrict loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, const t_options *opt)
 // Note: t_section_table_data information are on litlle endiant coded. So no biggy to compare them with anything not from the file !

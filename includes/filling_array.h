@@ -1,9 +1,10 @@
 #ifndef FILLING_ARRAY
 # define FILLING_ARRAY
 
-#include "section_header_info.h"
+# include <uchar.h>
+
+# include "section_header_info.h"
 # include "symbols_sorted_array.h"
-#include <uchar.h>
 
 typedef enum {
   OUT_OF_BOUND,

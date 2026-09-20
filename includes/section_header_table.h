@@ -1,6 +1,7 @@
 #ifndef SECTION_HEADER_TABLE_H
 # define SECTION_HEADER_TABLE_H
 
+# include <stdbool.h>
 # include <stddef.h> // for size_t
 # include <stdint.h>
 
@@ -17,11 +18,8 @@ typedef enum {
 
 t_section_table_status  read_table(const char * restrict loaded_file, const size_t loaded_size, const t_spec * specs, const t_section_table_data *info, const t_options *opt);
 
-t_section_table_status  read_as_32bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info);
-t_section_table_status  read_as_64bit(const char *loaded_file, const size_t loaded_size, const bool little_endian, const t_section_table_data *info);
-
 const char *  get_string_table(const char *loaded_file, const void *section_header, const t_spec *specs, const t_section_table_data *info);
 
-t_section_table_status  symbol_table_id(const uint16_t st_info, const bool litlle_endian, const bool x32, const void *symbol_header, const char *string_table);
+bool          overlapping_string_name(const char *s1, const char *s2); 
 
 #endif

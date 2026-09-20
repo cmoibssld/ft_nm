@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <stddef.h>
+#include <unistd.h>
 
 #include "libft.h"
 #include "sorting.h"
@@ -34,8 +35,10 @@ static int  letter_only_cmp(const char *s1, const char *s2)
   i = 0;
   while (i < ft_strlen(s1) && i < ft_strlen(s2))
   {
-    if ((s1[i] != s2[i]) && (s1[i] == '@' || s2[i] == '@'))
-      return (s1[i] == '@' ? 255 - s2[i] : s1[i] - 255); // so weird but works
+    while (s1[i] == '_' || s1[i] == '@')
+      ++s1;
+    while (s2[i] == '_' || s2[i] == '@')
+      ++s2;
     if (ft_tolower(s1[i]) != ft_tolower(s2[i]))
       break ;
     ++i;
@@ -50,6 +53,8 @@ int  sym_compare(const void *sym_1, const void *sym_2)
 
   s1 = sym_trim(((const s_symbol *)sym_1)->name);
   s2 = sym_trim(((const s_symbol *)sym_2)->name);
+  if (s1 == NULL || s2 == NULL)
+    return (s1 == NULL ? 0 : 1);
   
   return (letter_only_cmp(s1, s2));
 }
