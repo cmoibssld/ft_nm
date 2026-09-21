@@ -18,6 +18,8 @@ static bool is_a_bonus(const char c)
     return (true);
   else if (c == 'N')
     return (true);
+  else if (c == 't')
+    return (true);
   else if (c == '?')
     return (true);
   else
@@ -83,12 +85,8 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
   if (bind == STB_LOCAL && c != '?' && c != 'N')
     c = ft_tolower(c);
 
-  // if (c == '?')
-  // printf("sh_type: %d, sh_flags: %lu, st_shndx: %d --", sh_type, sh_flags, st_shndx);
-
   // remaining: i . I . n . p . S/s  . - .
   // i is not standart uni
-  // type 14 and 15
   return (c);
 }
 
@@ -109,7 +107,8 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   else
     letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type,
                            section->sh_flags);
-  if (opt->a == false && is_a_bonus(letter))
+  addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
+  if (opt->a == false && is_a_bonus(letter) && addr == 0)
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
@@ -117,7 +116,6 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -141,7 +139,8 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   else
     letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type,
                            section->sh_flags);
-  if (opt->a == false && is_a_bonus(letter))
+  addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
+  if (opt->a == false && is_a_bonus(letter) && addr == 0)
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
@@ -149,7 +148,6 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   if (name != NULL && name[0] == '$') // for weird symbols created by aarch64
     return (0);
-  addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
