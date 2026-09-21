@@ -14,25 +14,32 @@
  const char *  get_string_table(const char* loaded_file, const void * section_header, const t_spec *specs, const t_section_table_data *info)
 {
   const void * sh_table;
+  uint32_t     sh_link;
 
   sh_table = loaded_file + info->address;
+  if (specs->arch == X32_BIT)
+    sh_link = specs->e == LITTLE ? ((Elf32_Shdr *)section_header)->sh_link : endian_swap32(((Elf32_Shdr *)section_header)->sh_link);
+  else
+    sh_link = specs->e == LITTLE ? ((Elf64_Shdr *)section_header)->sh_link : endian_swap32(((Elf64_Shdr *)section_header)->sh_link);
+  if (sh_link >= info->total_entry)
+    return (NULL);
   if (specs->arch == X32_BIT)
   {
     if (specs->e == LITTLE)
     {
-      return (loaded_file + (((Elf32_Shdr *)(sh_table))[((Elf32_Shdr *)(section_header))->sh_link]).sh_offset);
+      return (loaded_file + (((Elf32_Shdr *)(sh_table))[sh_link]).sh_offset);
     }
     else
-      return (loaded_file + endian_swap32((((Elf32_Shdr *)(sh_table))[endian_swap32(((Elf32_Shdr *)(section_header))->sh_link)]).sh_offset)); // swap both offset: sh_link and sh_offset
+      return (loaded_file + endian_swap32((((Elf32_Shdr *)(sh_table))[sh_link]).sh_offset)); // swap both offset: sh_link and sh_offset
   }
   else
   {
     if (specs->e == LITTLE)
     {
-      return (loaded_file + (((Elf64_Shdr *)(sh_table))[((Elf64_Shdr *)(section_header))->sh_link]).sh_offset);
+      return (loaded_file + (((Elf64_Shdr *)(sh_table))[sh_link]).sh_offset);
     }
     else
-      return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[endian_swap64(((Elf64_Shdr *)(section_header))->sh_link)]).sh_offset));
+      return (loaded_file + endian_swap64((((Elf64_Shdr *)(sh_table))[sh_link]).sh_offset));
     }
 }  
 
