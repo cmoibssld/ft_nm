@@ -6,10 +6,10 @@ Elf64_Shdr *elf_sheader_64(Elf64_Ehdr *hdr, off_t size, bool swap) {
     uint16_t e_shentsize = SWAP16(hdr->e_shentsize, swap);
     uint16_t e_shnum = SWAP16(hdr->e_shnum, swap);
 
-	if (e_shoff == 0 ||
-		e_shoff + (e_shentsize * e_shnum) > (uint64_t)size) {
-			return NULL;
-		}
+	if (e_shoff == 0 || e_shoff > (uint64_t)size || 
+        (uint64_t)(e_shentsize * e_shnum) > (uint64_t)size - e_shoff) {
+    return NULL;
+}
 	return (Elf64_Shdr *)((uint8_t *)hdr + e_shoff);
 }
 
@@ -48,8 +48,6 @@ unsigned char get_nm_char_64(Elf64_Sym sym, Elf64_Shdr *sections, char *shstrtab
         uint64_t sh_flags = SWAP64(section.sh_flags, swap);
         uint32_t sh_name = SWAP32(section.sh_name, swap);
 
-        char *sec_name = shstrtab + sh_name;
-
         if (sh_type == SHT_NOBITS)
             c = 'B';
         else if (sh_flags & SHF_EXECINSTR)
@@ -67,15 +65,17 @@ unsigned char get_nm_char_64(Elf64_Sym sym, Elf64_Shdr *sections, char *shstrtab
     return c;
 }
 
-void print_symbols_64(t_nm_sym *sort_array, int output_size, Elf64_Ehdr *hdr, Elf64_Shdr *sections, char *shstrtab, bool swap) {
-
-    qsort(sort_array, output_size, sizeof(t_nm_sym), compare_symbols);
-
-    uint16_t e_shnum = SWAP16(hdr->e_shnum, swap);
+void print_symbols_64(t_nm_sym *sort_array, int output_size, bool swap, t_nm_args *nm_args) {
 
     if (output_size == 0) {
         printf("No symbols\n");
     }
+
+    if (!nm_args->r && !nm_args->p)
+        qsort(sort_array, output_size, sizeof(t_nm_sym), compare_symbols);
+    if (nm_args->r && !nm_args->p)
+        qsort(sort_array, output_size, sizeof(t_nm_sym), rev_compare_symbols);
+
 	for (int i = 0; i < output_size; i++) {
         
         Elf64_Sym *current_sym = sort_array[i].sym;
@@ -84,6 +84,14 @@ void print_symbols_64(t_nm_sym *sort_array, int output_size, Elf64_Ehdr *hdr, El
         uint16_t st_shndx = SWAP16(current_sym->st_shndx, swap);
         uint64_t st_value = SWAP64(current_sym->st_value, swap);
 
+
+        bool is_undefined = (strchr("vwuU", sort_array[i].c) != NULL);
+        bool is_global = (strchr("vwVWUTACBRD", sort_array[i].c) != NULL);
+
+        if (!is_undefined && nm_args->u)
+            continue ;
+        if (!is_global && nm_args->g)
+            continue ;
         if (st_shndx == SHN_UNDEF) {
             printf("                 ");
         } 
@@ -91,18 +99,17 @@ void print_symbols_64(t_nm_sym *sort_array, int output_size, Elf64_Ehdr *hdr, El
             printf("%016lx ", st_value);
         }
 
-        unsigned char c = get_nm_char_64(*current_sym, sections, shstrtab, e_shnum, swap);
-        printf("%c %s\n", c, current_name);
+        printf("%c %s\n", sort_array[i].c, current_name);
     }
 
-    free(sort_array);
 }
 
-int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, char *strtab, char *shstrtab, bool swap, off_t size, t_spec *spec, uint64_t strtab_size) {
+int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, char *strtab, char *shstrtab, bool swap, off_t size, t_spec *spec, uint64_t strtab_size, t_nm_args *nm_args) {
 
     uint64_t sh_size = SWAP64(symtab->sh_size, swap);
     uint64_t sh_entsize = SWAP64(symtab->sh_entsize, swap);
     uint64_t sh_offset = SWAP64(symtab->sh_offset, swap);
+    uint16_t e_shnum = SWAP16(hdr->e_shnum, swap);
 
     if (sh_entsize == 0) {
         print_error("ft_nm: error, division by zero\n");
@@ -119,7 +126,6 @@ int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, ch
 
 	t_nm_sym *sort_array = malloc(sizeof(t_nm_sym) * sym_count);
     if (!sort_array) {
-
         print_error("ft_nm: malloc error\n");
         return (1);
     }
@@ -133,6 +139,7 @@ int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, ch
         if (st_name >= strtab_size) {
 
             nm_error(spec->filename, "has a section extending past end of file", "warning: ");
+            free(sort_array);
             return (1);
         }
         char *name = strtab + st_name;
@@ -142,15 +149,21 @@ int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, ch
             sort_array[output_size].sym = &symbols[i];
             sort_array[output_size].name = name;
             sort_array[output_size].value = SWAP64(symbols[i].st_value, swap);
+            sort_array[output_size].c = get_nm_char_64(symbols[i], sections, shstrtab, e_shnum, swap);
             output_size++;
+        }
+
+        if (!name[0]) {
+            
         }
     }
 	
-    print_symbols_64(sort_array, output_size, hdr, sections, shstrtab, swap);
+    print_symbols_64(sort_array, output_size, swap, nm_args);
+    free(sort_array);
     return(0);
 }
 
-int core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
+int core_engine_64(char *addr, off_t size, t_spec *spec, t_nm_args *nm_args, bool swap) {
 
 	Elf64_Ehdr *hdr = (Elf64_Ehdr *)addr;
 
@@ -183,6 +196,10 @@ int core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
         if (sh_type == SHT_SYMTAB) {
             symtab = section;
             uint32_t sh_link = SWAP32(symtab->sh_link, swap);
+            if (sh_link >= e_shnum) {
+                nm_error(spec->filename, "invalid section offset", 0);
+                return 1;
+            }
             Elf64_Shdr *strtab_section = &sections[sh_link];
             
             uint64_t str_offset = SWAP64(strtab_section->sh_offset, swap);
@@ -190,6 +207,10 @@ int core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
 
             if (strtab_section && str_offset + str_size <= (uint64_t)size) {
                 strtab = (char *)((uint8_t *)hdr + str_offset);
+            }
+            else {
+                nm_error(spec->filename, "Offset of table is exceeding file size", 0);
+                return 1;
             }
             break;
         }
@@ -199,7 +220,7 @@ int core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap) {
         return (1);
     }
 
-	if (get_symbols_64(hdr, symtab, sections, strtab, shstrtab, swap, size, spec, str_size)) {
+	if (get_symbols_64(hdr, symtab, sections, strtab, shstrtab, swap, size, spec, str_size, nm_args)) {
         nm_error(spec->filename, "no symbols", 0);
         return (1);
     }

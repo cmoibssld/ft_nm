@@ -3,6 +3,7 @@
 
 #include <elf.h>
 #include <fcntl.h>
+#include "../libft/includes/libft.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,21 +39,30 @@ typedef struct {
     void *sym;
     char *name;
     uint64_t value;
+    unsigned char c;
 } t_nm_sym;
 
-int       ft_error(char *str, int error_code);
+typedef struct {
+    bool a;
+    bool g;
+    bool u;
+    bool r;
+    bool p;
+} t_nm_args;
 
-int       ft_strlen(char *str);
+int       ft_error(char *str, int error_code);
 
 int       putstr(char *str, int fd);
 
 int       check_elf(unsigned char *addr, int fd, t_spec *spec, off_t file_size);
 
-int       core_engine_32(char *addr, int fd, off_t size, t_spec *spec, bool swap);
+int       core_engine_32(char *addr, off_t size, t_spec *spec, t_nm_args *nm_args, bool swap);
 
-int       core_engine_64(char *addr, int fd, off_t size, t_spec *spec, bool swap);
+int       core_engine_64(char *addr, off_t size, t_spec *spec, t_nm_args *nm_args, bool swap);
 
 int       compare_symbols(const void *a, const void *b);
+
+int       rev_compare_symbols(const void *a, const void *b);
 
 int       nm_error(char *filename, char *custom_error, char *flag);
 
