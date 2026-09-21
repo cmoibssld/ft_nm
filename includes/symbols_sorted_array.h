@@ -20,6 +20,6 @@ ssize_t  looping_on_symbols(const void *section_header, const size_t loaded_size
 
 s_symbol    *create_array(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info, size_t *total_symbols);
 bool        check_strings_name(const s_symbol *symbol_array, const size_t total_symbols, const char *loaded_file, const size_t loaded_size);
-void    sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_options *opt);
+void    sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_spec *specs, const t_options *opt);
 
 #endif

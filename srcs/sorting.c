@@ -1,14 +1,16 @@
+#include <elf.h>
 #include <limits.h>
 #include <stddef.h>
 #include <unistd.h>
 
 #include "libft.h"
+#include "output_formatting.h"
 #include "sorting.h"
 #include "symbols_sorted_array.h"
 
 static const char *sym_trim(const char *str)
 {
-  unsigned int  i;
+  unsigned int i;
 
   if (str == NULL)
     return (NULL);
@@ -27,8 +29,8 @@ static const char *sym_trim(const char *str)
 // special sort rules (empirical)
 // - uppercase and lowercase are treaded as the same
 // - at '@' are like 255
- 
-static int  letter_only_cmp(const char *s1, const char *s2)
+
+static int letter_only_cmp(const char *s1, const char *s2)
 {
   size_t i;
 
@@ -40,26 +42,92 @@ static int  letter_only_cmp(const char *s1, const char *s2)
     while (s2[i] == '_' || s2[i] == '@')
       ++s2;
     if (ft_tolower(s1[i]) != ft_tolower(s2[i]))
-      break ;
+      break;
     ++i;
   }
-  return (ft_tolower(s1[i]) - ft_tolower(s2[i]));
+  return (s1[i] - s2[i]);
 }
 
-int  sym_compare(const void *sym_1, const void *sym_2)
+static char  get_letter(const void *symbol_hdr, const void *section_hdr, const bool arch_x32)
+{
+  if (arch_x32 == true)
+  {
+    Elf32_Sym *sy = (Elf32_Sym *)symbol_hdr;
+    Elf32_Shdr *hd = (Elf32_Shdr *)section_hdr;
+    if (hd == NULL)
+      return (get_sym_flags(ELF32_ST_BIND(sy->st_info), ELF32_ST_TYPE(sy->st_info), sy->st_shndx, 0, 0));
+    else
+      return (get_sym_flags(ELF32_ST_BIND(sy->st_info), ELF32_ST_TYPE(sy->st_info), sy->st_shndx, hd->sh_type, hd->sh_flags));
+  }
+  else
+  {
+    Elf64_Sym *sy = (Elf64_Sym *)symbol_hdr;
+    Elf64_Shdr *hd = (Elf64_Shdr *)section_hdr;
+    if (hd == NULL)
+      return (get_sym_flags(ELF64_ST_BIND(sy->st_info), ELF64_ST_TYPE(sy->st_info), sy->st_shndx, 0, 0));
+    else
+      return (get_sym_flags(ELF64_ST_BIND(sy->st_info), ELF64_ST_TYPE(sy->st_info), sy->st_shndx, hd->sh_type, hd->sh_flags));
+  }
+}
+
+int sym_compare32(const void *sym_1, const void *sym_2)
 {
   const char *s1;
   const char *s2;
+  int res;
 
   s1 = sym_trim(((const s_symbol *)sym_1)->name);
   s2 = sym_trim(((const s_symbol *)sym_2)->name);
   if (s1 == NULL || s2 == NULL)
     return (s1 == NULL ? 0 : 1);
-  
-  return (letter_only_cmp(s1, s2));
+
+  res = letter_only_cmp(s1, s2);
+  if (res == 0)
+  {
+    const Elf32_Shdr *hd = (Elf32_Shdr *)((s_symbol *)sym_1)->section;
+    const Elf32_Sym  *sy = (Elf32_Sym *)((s_symbol *)sym_1)->sym;
+    char c1 = get_letter(sy, hd, true);
+    hd = (Elf32_Shdr *)((s_symbol *)sym_2)->section;
+    sy = (Elf32_Sym *)((s_symbol *)sym_2)->sym;
+    char c2 = get_letter(sy, hd, true);
+    return (c2 - c1);
+  }
+  return (res);
 }
 
-int  rev_sym_cmp(const void *sym_1, const void *sym_2)
+int sym_compare64(const void *sym_1, const void *sym_2)
 {
-  return (-(sym_compare(sym_1, sym_2)));
+  const char *s1;
+  const char *s2;
+  int        res;
+
+  s1 = sym_trim(((const s_symbol *)sym_1)->name);
+  s2 = sym_trim(((const s_symbol *)sym_2)->name);
+  if (s1 == NULL || s2 == NULL)
+    return (s1 == NULL ? 0 : 1);
+
+  res = letter_only_cmp(s1, s2);
+  if (res == 0)
+  {
+    printf("Comparing letters: %s, %s... -- ", s1, s2);
+    const Elf64_Shdr *hd = (Elf64_Shdr *)((s_symbol *)sym_1)->section;
+    const Elf64_Sym  *sy = (Elf64_Sym *)((s_symbol *)sym_1)->sym;
+    char c1 = get_letter(sy, hd, true);
+    hd = (Elf64_Shdr *)((s_symbol *)sym_2)->section;
+    sy = (Elf64_Sym *)((s_symbol *)sym_2)->sym;
+    char c2 = get_letter(sy, hd, true);
+    printf("letter %c vs %c\n", c1, c2);
+    return (c2 - c1);
+  }
+  return (res);
+}
+
+int rev_sym_cmp32(const void *sym_1, const void *sym_2)
+{
+  return (-(sym_compare32(sym_1, sym_2)));
+}
+
+int rev_sym_cmp64(const void *sym_1, const void *sym_2)
+{
+  return (-(sym_compare64(sym_1, sym_2)));
 }

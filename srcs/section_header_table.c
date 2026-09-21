@@ -76,7 +76,7 @@ t_section_table_status  read_table(const char *restrict loaded_file, const size_
   symbols_array = create_array(loaded_file, loaded_size, specs, info, &total_symbols);
   if (symbols_array == NULL)
     return(MEMORY_ALLOC_ERROR);
-  sort_array(symbols_array, total_symbols, opt);
+  sort_array(symbols_array, total_symbols, specs, opt);
   print_array(symbols_array, total_symbols, specs, opt);
   // print_array_important_stuff(symbols_array, specs, total_symbols);
   free(symbols_array);
