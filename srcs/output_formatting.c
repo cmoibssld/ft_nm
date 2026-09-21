@@ -18,8 +18,6 @@ static bool is_a_bonus(const char c)
     return (true);
   else if (c == 'N')
     return (true);
-  else if (c == 't')
-    return (true);
   else if (c == '?')
     return (true);
   else

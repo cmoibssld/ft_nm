@@ -109,14 +109,14 @@ int sym_compare64(const void *sym_1, const void *sym_2)
   res = letter_only_cmp(s1, s2);
   if (res == 0)
   {
-    printf("Comparing letters: %s, %s... -- ", s1, s2);
+    // printf("Comparing letters: %s, %s... -- ", s1, s2);
     const Elf64_Shdr *hd = (Elf64_Shdr *)((s_symbol *)sym_1)->section;
     const Elf64_Sym  *sy = (Elf64_Sym *)((s_symbol *)sym_1)->sym;
     char c1 = get_letter(sy, hd, false);
     hd = (Elf64_Shdr *)((s_symbol *)sym_2)->section;
     sy = (Elf64_Sym *)((s_symbol *)sym_2)->sym;
     char c2 = get_letter(sy, hd, false);
-    printf("letter %c vs %c\n", c1, c2);
+    // printf("letter %c vs %c\n", c1, c2);
     return (c1 - c2);
   }
   return (res);
