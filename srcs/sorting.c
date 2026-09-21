@@ -104,7 +104,7 @@ int sym_compare64(const void *sym_1, const void *sym_2)
   s1 = sym_trim(((const s_symbol *)sym_1)->name);
   s2 = sym_trim(((const s_symbol *)sym_2)->name);
   if (s1 == NULL || s2 == NULL)
-    return (s1 == NULL ? 0 : 1);
+    return (s1 == NULL ? -1 : 1);
 
   res = letter_only_cmp(s1, s2);
   if (res == 0)
