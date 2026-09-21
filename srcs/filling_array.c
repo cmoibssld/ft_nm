@@ -29,7 +29,8 @@ FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loade
     if (sh_type == SHT_SYMTAB)
     {
       strtab = get_string_table(loaded_file, section_header, specs, info);
-      if (strtab )
+      if (strtab == NULL)
+        return (GENERAL_ERROR);
       if (fill_array_per_symbols(symbol_array, loaded_file, section_header, loaded_file + info->address, strtab, specs, &s_array_idx) != FILLING_OK)
           return (GENERAL_ERROR);
     }

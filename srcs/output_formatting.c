@@ -31,6 +31,11 @@ static bool is_local_symbol(const char c)
   return ((c >= 'a') && (c <= 'z'));
 }
 
+static bool is_undefined(const char c)
+{
+  return (c == 'U' || c == 'u' || c == 'w' || c == 'v');
+}
+
 char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
                    const uint32_t sh_type, const uint64_t sh_flags)
 // uint64_t not optimal for flags in 32bits -> uint32_t but whatever, that's not
@@ -112,8 +117,10 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
     return (0);
   if (name != NULL && name[0] == '$')
     return (0);
+  if (opt->u == true && is_undefined(letter) == false)
+    return (0);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (letter == 'U' || letter == 'u' || letter == 'w')
+  if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
     res = (printf("%016X %c %s\n", addr, letter, name) == -1);
@@ -140,10 +147,12 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
+  if (opt->u == true && is_undefined(letter) == false)
+    return (0);
   if (name != NULL && name[0] == '$') // for weird symbols created by aarch64
     return (0);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  if (letter == 'U' || letter == 'u' || letter == 'w')
+  if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
     res = printf("%016" PRIx64 " %c %s\n", addr, letter, name);

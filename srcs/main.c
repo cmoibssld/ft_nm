@@ -1,5 +1,6 @@
 #include <fcntl.h> // open
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h> // free
 #include <sys/mman.h> // mmap and unmap
 #include <unistd.h> // close, write
@@ -9,35 +10,64 @@
 #include "libft.h" // ft_calloc
 #include "main.h"
 
-bool  is_an_option(const char *param, t_options *opt)
+static bool some_other_flag(const char *param)
 {
-  if (param[0] != '-' || ft_strlen(param) != 2)
-    return (false);
-  switch (param[1]) {
-    case 'a': {
-        opt->a = true;
-        return (true);
-      }
-    case 'g': {
-        opt->g = true;
-        return (true);
-      }
-    case 'u': {
-        opt->u = true;
-        return (true);
-      }
-    case 'r': {
-        opt->r = true;
-        return (true);
-      }
-    case 'p': {
-        opt->p = true;
-        return (true);
-      }
-    default: {
-      return (false);
+  uint32_t  i;
+
+  if (param == NULL)
+    return (true);
+  i = 0;
+  while (param[i] != '\0')
+  {
+    switch (param[i]) {
+      case 'a': { break ; }
+      case 'g': { break ; }
+      case 'p': { break ; }
+      case 'r': { break ; }
+      case 'u': { break ; }
+      default: { return (true); }
     }
+    ++i;
   }
+  return (false);
+}  
+
+static bool  is_an_option(const char *param, t_options *opt)
+{
+  int  i;
+  
+  i = 1;
+  if (param[0] != '-' || ft_strlen(param) < 2)
+    return (false);
+  if (some_other_flag(&param[1]) == true)
+    return (false);
+  while (param[i] != '\0')
+  {
+    switch (param[i]) {
+      case 'a': {
+          opt->a = true;
+          break ;
+        }
+      case 'g': {
+          opt->g = true;
+          break ;
+        }
+      case 'p': {
+          opt->p = true;
+          break ;
+        }
+      case 'r': {
+          opt->p = true;
+          break ;
+        }
+      case 'u': {
+          opt->u = true;
+          break ;
+        }
+      }
+      ++i;
+    }
+  return (true);
 }
 
 char  *close_file(char *loaded_file, struct stat *statbuf, int *fd)

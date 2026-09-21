@@ -28,7 +28,7 @@ static const char *sym_trim(const char *str)
 
 // special sort rules (empirical)
 // - uppercase and lowercase are treaded as the same
-// - at '@' are like 255
+// - at '@' and underscore '_' are ignored
 
 static int letter_only_cmp(const char *s1, const char *s2)
 {
@@ -45,7 +45,7 @@ static int letter_only_cmp(const char *s1, const char *s2)
       break;
     ++i;
   }
-  return (s1[i] - s2[i]);
+  return (ft_tolower(s1[i]) - ft_tolower(s2[i]));
 }
 
 static char  get_letter(const void *symbol_hdr, const void *section_hdr, const bool arch_x32)
@@ -90,7 +90,7 @@ int sym_compare32(const void *sym_1, const void *sym_2)
     hd = (Elf32_Shdr *)((s_symbol *)sym_2)->section;
     sy = (Elf32_Sym *)((s_symbol *)sym_2)->sym;
     char c2 = get_letter(sy, hd, true);
-    return (c2 - c1);
+    return (ft_tolower(c1) - ft_tolower(c2));
   }
   return (res);
 }

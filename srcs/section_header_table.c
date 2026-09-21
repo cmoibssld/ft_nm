@@ -44,6 +44,7 @@
 }  
 
 bool  overlapping_string_name(const char *s1, const char *s2)
+// unused: nm doens't verify this. Might use it later.
 {
   size_t i;
 
