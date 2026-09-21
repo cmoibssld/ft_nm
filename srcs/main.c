@@ -57,7 +57,7 @@ static bool  is_an_option(const char *param, t_options *opt)
           break ;
         }
       case 'r': {
-          opt->p = true;
+          opt->r = true;
           break ;
         }
       case 'u': {
