@@ -50,6 +50,8 @@ unsigned char get_nm_char_64(Elf64_Sym sym, Elf64_Shdr *sections, char *shstrtab
 
         if (sh_type == SHT_NOBITS)
             c = 'B';
+        else if (!(sh_flags & SHF_ALLOC))
+            c = 'N';
         else if (sh_flags & SHF_EXECINSTR)
             c = 'T';
         else if ((sh_flags & SHF_ALLOC) && !(sh_flags & SHF_WRITE))
@@ -132,7 +134,7 @@ int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, ch
 
 	int output_size = 0;
 
-	for (int i = 0; i < sym_count; i++) {
+	for (int i = 1; i < sym_count; i++) {
         
         uint32_t st_name = SWAP32(symbols[i].st_name, swap);
 
@@ -144,17 +146,32 @@ int get_symbols_64(Elf64_Ehdr *hdr, Elf64_Shdr *symtab, Elf64_Shdr *sections, ch
         }
         char *name = strtab + st_name;
         unsigned char type = ELF64_ST_TYPE(symbols[i].st_info);
+        uint16_t st_shndx = SWAP16(symbols[i].st_shndx, swap);
 
-        if (name[0] != '\0' && type != STT_FILE) {
+        if (type == STT_SECTION && name[0] == '\0') {
+            if (st_shndx < e_shnum) {
+                uint32_t sh_name = SWAP32(sections[st_shndx].sh_name, swap);
+                name = shstrtab + sh_name;
+            }
+        }
+
+        bool is_file = (type == STT_FILE);
+        bool is_section = (type == STT_SECTION);
+        
+        bool should_keep = false;
+
+        if (nm_args->a) {
+            should_keep = true;
+        } else {
+            should_keep = (name[0] != '\0' && !is_file && !is_section);
+        }
+
+        if (should_keep) {
             sort_array[output_size].sym = &symbols[i];
             sort_array[output_size].name = name;
             sort_array[output_size].value = SWAP64(symbols[i].st_value, swap);
             sort_array[output_size].c = get_nm_char_64(symbols[i], sections, shstrtab, e_shnum, swap);
             output_size++;
-        }
-
-        if (!name[0]) {
-            
         }
     }
 	
