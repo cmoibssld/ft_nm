@@ -12,13 +12,13 @@
 #include "main.h"
 #include "output_formatting.h"
 
-static bool is_a_bonus(const char c)
+static bool is_a_bonus(const char c, const uint64_t sh_flags)
 {
   if (c == 'a' || c == 'A')
     return (true);
   else if (c == 'N')
     return (true);
-  else if (c == 't')
+  else if (c == 't' && sh_flags == SHF_ALLOC)
     return (true);
   else if (c == '?')
     return (true);
@@ -90,29 +90,30 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
   return (c);
 }
 
-int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
-              const t_elf_endian e, const t_options *opt) {
-  int res;
-  char letter;
-  uint32_t addr;
-  const char bind = ELF32_ST_BIND(sym->st_info);
-  const char type = ELF32_ST_TYPE(sym->st_info);
+int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
+{
+  int        res;
+  char       letter;
+  uint32_t   addr;
+  
+  const char      bind = ELF32_ST_BIND(sym->st_info);
+  const char      type = ELF32_ST_TYPE(sym->st_info);
+  const uint16_t  st_shndx = e == LITTLE ? sym->st_shndx : endian_swap16(sym->st_shndx);
 
+  const uint16_t  sh_type =
+    st_shndx == SHN_ABS ? 0 :
+                        e == LITTLE ? section->sh_type : endian_swap16(section->sh_type);
+  const uint64_t  sh_flags =
+    st_shndx == SHN_ABS ? 0 :
+                        e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
+  
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  // invalid read, on flags IMO not on the type but ...
-  if (sym->st_shndx ==
-      SHN_ABS) // cannot read the header it seems -> invalid read...
-    letter = get_sym_flags(bind, type, sym->st_shndx, 0, 0);
-  else
-    letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type,
-                           section->sh_flags);
+  letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && is_a_bonus(letter) && addr == 0)
+  if (opt->a == false && (is_a_bonus(letter, sh_flags) || addr == 0))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
-    return (0);
-  if (name != NULL && name[0] == '$')
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
@@ -123,30 +124,32 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   return (res);
 }
 
-int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
-              const t_elf_endian e, const t_options *opt) {
-  int res;
-  char letter;
-  uint64_t addr;
-  const char bind = ELF64_ST_BIND(sym->st_info);
-  const char type = ELF64_ST_TYPE(sym->st_info);
+int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name, const t_elf_endian e, const t_options *opt)
+{
+  int        res;
+  char       letter;
+  uint64_t   addr;
+  
+  const char      bind = ELF32_ST_BIND(sym->st_info);
+  const char      type = ELF32_ST_TYPE(sym->st_info);
+  const uint16_t  st_shndx = e == LITTLE ? sym->st_shndx : endian_swap16(sym->st_shndx);
+
+  const uint16_t  sh_type =
+    st_shndx == SHN_ABS ? 0 :
+                        e == LITTLE ? section->sh_type : endian_swap16(section->sh_type);
+  const uint64_t  sh_flags =
+    st_shndx == SHN_ABS ? 0 :
+                        e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
 
   if (bind >= STB_LOPROC && bind <= STB_HIPROC)
     return (0);
-  if (sym->st_shndx ==
-      SHN_ABS) // cannot read the header it seems -> invalid read...
-    letter = get_sym_flags(bind, type, sym->st_shndx, 0, 0);
-  else
-    letter = get_sym_flags(bind, type, sym->st_shndx, section->sh_type,
-                           section->sh_flags);
+  letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  if (opt->a == false && is_a_bonus(letter) && addr == 0)
+  if (opt->a == false && (is_a_bonus(letter, sh_flags) || addr == 0))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
-    return (0);
-  if (name != NULL && name[0] == '$') // for weird symbols created by aarch64
     return (0);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
