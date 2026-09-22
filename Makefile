@@ -94,11 +94,11 @@ $(LIBFT_LIB):
 		
 clean:
 	$(RM) $(BUILD_DIR)
-	$(MAKE) clean -C $(LIBFT_DIR)
+	-$(MAKE) clean -C $(LIBFT_DIR)
 
 fclean: clean
-	rm -rf $(NAME)
-	$(MAKE) clean -C $(LIBFT_DIR)
+	$(RM) $(NAME)
+	-$(MAKE) fclean -C $(LIBFT_DIR)
 
 x86_64:
 	$(MAKE) TARGET_FLAGS="$(X86_64_FLAGS)" all
