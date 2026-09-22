@@ -18,7 +18,7 @@ static bool is_a_bonus(const char c, const uint64_t sh_flags)
     return (true);
   else if (c == 'N')
     return (true);
-  else if (c == 't' && sh_flags == SHF_ALLOC)
+  else if (c == 't' && sh_flags == SHF_EXECINSTR)
     return (true);
   else if (c == '?')
     return (true);
@@ -111,7 +111,7 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
     return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_flags) || addr == 0))
+  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
@@ -145,7 +145,7 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_flags) || addr == 0))
+  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
