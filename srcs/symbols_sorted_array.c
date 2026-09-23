@@ -9,6 +9,7 @@
 #include "endian.h"
 #include "filling_array.h"
 #include "identification.h"
+#include "libft.h"
 #include "section_header_info.h"
 #include "sorting.h"
 #include "symbols_sorted_array.h"
@@ -112,7 +113,7 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
     return (NULL); // out of bound
   else
     *total_symbols = (size_t)symbols_count;
-  ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
+  ophelia = (s_symbol *)ft_calloc(*total_symbols, sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL); // two types of error... change this
   if (fill_array_per_section(ophelia, loaded_file, specs, info) != FILLING_OK)
@@ -152,16 +153,9 @@ bool check_strings_name(const s_symbol *symbol_array,
     }
     for (size_t j = 0; j < total_symbols; ++j)
     {
-      if (j == sym || symbol_array[j].name == NULL)
+      if (j == sym ||
+           symbol_array[j].name == NULL)
         continue;
-      // if (overlapping_string_name(symbol_array[j].name,
-      // symbol_array[sym].name) == true)
-      // {
-      //   printf("Overlapping now: %lu with %lu\n", i, j);
-      //   perror("strings are overlapping: ");
-      //   return (false);
-      // }
-      // NM doesn't do that...
     }
   }
   return (true);

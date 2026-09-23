@@ -16,7 +16,7 @@ FILLING_STATUS  fill_array_per_section(s_symbol *symbol_array, const char *loade
   size_t      section_idx;
   size_t      s_array_idx;
   const void  *section_header;
-  uint16_t    sh_type;
+  uint32_t    sh_type;
   const char  *strtab;
 
   section_idx = 0;
@@ -43,7 +43,7 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
 {
   size_t    symbol_idx;
   size_t    symbol_size;
-  uint16_t  section_size;
+  uint64_t  section_size; // uint32_t for 32 bits. but ...
 
   symbol_idx = 1;
   symbol_size = specs->arch == X32_BIT ? sizeof(Elf32_Sym) : sizeof(Elf64_Sym);
@@ -55,7 +55,7 @@ FILLING_STATUS  fill_array_per_symbols(s_symbol *symbol_array, const char *loade
     symbol_array[*s_array_idx].sym = get_symbol_ptr(loaded_file, section_header, symbol_idx, specs);
     symbol_array[*s_array_idx].name = get_symbol_name(symbol_array[*s_array_idx].sym, strtab, specs);
     symbol_array[*s_array_idx].section = get_section_ptr(symbol_array[*s_array_idx].sym, section_table, specs);
-    // maybe if symbol name is voided give it the section anme ?
+    // maybe if symbol name is voided give it the section name ?
     if (ft_strlen(symbol_array[*s_array_idx].name) == 0)
       symbol_array[*s_array_idx].name = get_section_name(symbol_array[*s_array_idx].section, strtab, specs); // works ! perfect
     ++(*s_array_idx);
