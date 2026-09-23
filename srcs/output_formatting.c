@@ -26,6 +26,18 @@ bool is_a_bonus(const char c, const uint64_t sh_flags)
     return (false);
 }
 
+bool  is_aarch64_symbol(const char *name) // this is how it is done for llvm-nm. We can expect that it is how GNU nm does it
+{
+  if (name == NULL)
+    return (false);
+  else if (ft_strncmp("$d", name, 2) == 0)
+    return (true);
+  else if (ft_strncmp("$x", name, 2) == 0)
+    return (true);
+  else
+    return (false);
+}
+
 static bool is_local_symbol(const char c)
 {
   return ((c >= 'a') && (c <= 'z'));
@@ -129,7 +141,7 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   int        res;
   char       letter;
   uint64_t   addr;
-  
+
   const char      bind = ELF32_ST_BIND(sym->st_info);
   const char      type = ELF32_ST_TYPE(sym->st_info);
   const uint16_t  st_shndx = e == LITTLE ? sym->st_shndx : endian_swap16(sym->st_shndx);
@@ -141,8 +153,6 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     st_shndx == SHN_ABS ? 0 :
                         e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
 
-  if (sh_type >= SHT_LOOS && sh_type <= SHT_HIPROC)
-    return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
   // if (opt->a == false && (is_a_bonus(letter, sh_flags)))
@@ -162,12 +172,11 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
 
 int print_array(const s_symbol *symbols, const size_t total_symbols, const t_spec *specs, const t_options *opt)
 {
-  size_t i;
   int value;
 
-  i = 0;
-  while (i < total_symbols)
-  {
+  for (size_t i = 0; i < total_symbols; ++i) {
+    if (is_aarch64_symbol(symbols[i].name))
+      continue ;
     if (specs->arch == X32_BIT)
       value = print_x32(symbols[i].sym, symbols[i].section,
                         symbols[i].name == NULL ? "" : symbols[i].name,
@@ -178,7 +187,6 @@ int print_array(const s_symbol *symbols, const size_t total_symbols, const t_spe
                         specs->e, opt);
     if (value == -1)
       return (-1);
-    ++i;
   }
   return (0);
 }
