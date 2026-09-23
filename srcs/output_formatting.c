@@ -100,15 +100,13 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   const char      type = ELF32_ST_TYPE(sym->st_info);
   const uint16_t  st_shndx = e == LITTLE ? sym->st_shndx : endian_swap16(sym->st_shndx);
 
-  const uint16_t  sh_type =
+  const uint32_t  sh_type =
     st_shndx == SHN_ABS ? 0 :
                         e == LITTLE ? section->sh_type : endian_swap16(section->sh_type);
   const uint64_t  sh_flags =
     st_shndx == SHN_ABS ? 0 :
                         e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
   
-  if (bind >= STB_LOPROC && bind <= STB_HIPROC)
-    return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
   if (opt->a == false && (is_a_bonus(letter, sh_flags)))
@@ -117,6 +115,8 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
+  if (name && name[0] == '$')
+    printf("type: %d, bind: %d ---", type, bind);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -134,14 +134,14 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   const char      type = ELF32_ST_TYPE(sym->st_info);
   const uint16_t  st_shndx = e == LITTLE ? sym->st_shndx : endian_swap16(sym->st_shndx);
 
-  const uint16_t  sh_type =
+  const uint32_t  sh_type =
     st_shndx == SHN_ABS ? 0 :
                         e == LITTLE ? section->sh_type : endian_swap16(section->sh_type);
   const uint64_t  sh_flags =
     st_shndx == SHN_ABS ? 0 :
                         e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
 
-  if (bind >= STB_LOPROC && bind <= STB_HIPROC)
+  if (sh_type >= SHT_LOOS && sh_type <= SHT_HIPROC)
     return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
@@ -151,6 +151,8 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
+  if (name && name[0] == '$')
+    printf("sh_type %d, sh_flags %lu---", sh_type, sh_flags);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else

@@ -115,9 +115,8 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
   ophelia = (s_symbol *)malloc(*total_symbols * sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL); // two types of error... change this
-  if (fill_array_per_section(ophelia, loaded_file, specs, info) != FILLING_OK) {
-    // but never happens... There is no allocation memory, out of bound is
-    // verified before... Maybe non-null terminated string?
+  if (fill_array_per_section(ophelia, loaded_file, specs, info) != FILLING_OK)
+  {
     free(ophelia);
     return (NULL);
   }
@@ -129,8 +128,6 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
   return (ophelia);
 }
 
-// check that string are null terminated ? -> check that they don't overlap +
-// check that they don't go beyond file
 bool check_strings_name(const s_symbol *symbol_array,
                         const size_t total_symbols, const char *loaded_file,
                         const size_t loaded_size)
@@ -164,6 +161,7 @@ bool check_strings_name(const s_symbol *symbol_array,
       //   perror("strings are overlapping: ");
       //   return (false);
       // }
+      // NM doesn't do that...
     }
   }
   return (true);

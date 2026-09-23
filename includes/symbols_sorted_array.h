@@ -5,6 +5,7 @@
 # include <inttypes.h>
 # include <stdbool.h>
 # include <stddef.h>
+# include <sys/types.h>
 
 # include "main.h"
 # include "section_header_info.h"

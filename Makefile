@@ -52,15 +52,13 @@ OBJS			=	${SRCS:%.c=${OBJ_DIR}/%.o}
 DEPS			=	${SRCS:%.c=${DEP_DIR}/%.d}
 GET_DEP_PATH	=	${@:${OBJ_DIR}/%.o=${DEP_DIR}/.%d}
 
-OBJS_TEST		= ${UNIT_TEST:%.c=${TEST_DIR}/%.o}
-
 CC				=	clang # For cross compilation and test my own object files
 CFLAG			=	-Wall -Werror -Wextra \
 					-MMD -MP -g3
 
 TARGET_FLAGS	=
 
-X86_64_FLAGS	= --target=x86_64-linux-gnu # To create own x86-64 objects for testing
+X86_64_FLAGS	= -target x86_64-i386pep
 
 MKDIR			=	@mkdir -vp
 RM				=	@rm -vrf
@@ -90,7 +88,7 @@ init:
 	git submodule update
 		
 $(LIBFT_LIB):
-	$(MAKE) -C $(LIBFT_DIR)
+	$(MAKE) $(TARGET_FLAGS) -C $(LIBFT_DIR)
 		
 clean:
 	$(RM) $(BUILD_DIR)
