@@ -20,7 +20,8 @@
 // Twice, yes but one, knowned-before allocation. Better than malloc and
 // realloc.
 
-ssize_t looping_on_sections(const char *loaded_file, const size_t loaded_size,
+ssize_t looping_on_sections(const char *loaded_file,
+                            const size_t loaded_size,
                             const t_spec *specs,
                             const t_section_table_data *info)
 {
@@ -36,8 +37,10 @@ ssize_t looping_on_sections(const char *loaded_file, const size_t loaded_size,
 
   while (i < info->total_entry)
   {
-    if (loaded_size <= info->address + (i + 1) * symbol_size) // Equal to loaded_size cannot be reached
-      return (-1);                 // i + 1 because symbol must fit entirely
+    if (loaded_size <= info->address + (i + 1) * symbol_size)
+    // Equal to loaded_size cannot be reached
+      return (-1);
+    // i + 1 because symbol must fit entirely
     section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[i] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[i];
     sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap32(sh_type);
@@ -61,7 +64,8 @@ ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size,
                      ? ((Elf32_Shdr *)section_header)->sh_size
                      : ((Elf64_Shdr *)section_header)->sh_size;
   section_size =
-      specs->e == LITTLE ? section_size : endian_swap32(section_size);
+      specs->e == LITTLE ? section_size : endian_swap64(section_size);
+
   i = 1;
   while (i * symbol_size < section_size)
   {

@@ -57,15 +57,19 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
 
   if (bind == STB_GNU_UNIQUE)
     c = 'u';
-  else if (bind == STB_WEAK) {
+  else if (bind == STB_WEAK)
+  {
     c = 'W';
     if (st_shndx == SHN_UNDEF)
       c = 'w';
-  } else if (bind == STB_WEAK && type == STT_OBJECT) {
+  }
+  else if (bind == STB_WEAK && type == STT_OBJECT)
+  {
     c = 'V';
     if (st_shndx == SHN_UNDEF)
       c = 'v';
-  } else if (st_shndx == SHN_UNDEF)
+  }
+  else if (st_shndx == SHN_UNDEF)
     c = 'U';
   else if (st_shndx == SHN_ABS)
     c = 'A';
@@ -121,14 +125,12 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  // if (opt->a == false && (is_a_bonus(letter, sh_flags)))
-  //   return (0);
+  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+    return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  // if (name && name[0] == '$')
-    // printf("type: %d, bind: %d ---", type, bind);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -154,15 +156,16 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
                         e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
 
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
-  addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  // if (opt->a == false && (is_a_bonus(letter, sh_flags)))
-  //   return (0);
+  if (ft_tolower(letter) == 'b')
+    letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
+  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+    return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  // if (name && (name[0] == '$' || name[0] == '\0'))
-  //   return (0);
+  
+  addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -174,7 +177,8 @@ int print_array(const s_symbol *symbols, const size_t total_symbols, const t_spe
 {
   int value;
 
-  for (size_t i = 0; i < total_symbols; ++i) {
+  for (size_t i = 0; i < total_symbols; ++i)
+  {
     if (is_aarch64_symbol(symbols[i].name))
       continue ;
     if (specs->arch == X32_BIT)

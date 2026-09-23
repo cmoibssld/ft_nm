@@ -11,9 +11,11 @@
 # include "section_header_info.h"
 
 typedef struct {
-  const void  *section;
-  const void  *sym;
-  const char  *name;
+  const void      *section;
+  const void      *sym;
+  const char      *name;
+  const char      letter;
+  // const uint64_t  valu;
 } s_symbol;
 
 ssize_t  looping_on_sections(const char *loaded_file, const size_t loaded_size, const t_spec *specs, const t_section_table_data *info);
