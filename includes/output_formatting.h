@@ -1,7 +1,7 @@
 #ifndef OUTPUT_FORMATTING
 # define OUTPUT_FORMATTING
 
-#include <elf.h>
+# include <elf.h>
 # include <stdbool.h>
 
 # include "main.h"

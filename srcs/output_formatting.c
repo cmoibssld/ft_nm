@@ -115,8 +115,8 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  if (name && name[0] == '$')
-    printf("type: %d, bind: %d ---", type, bind);
+  // if (name && name[0] == '$')
+    // printf("type: %d, bind: %d ---", type, bind);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -151,8 +151,8 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  if (name && name[0] == '$')
-    printf("sh_type %d, sh_flags %lu---", sh_type, sh_flags);
+  if (name == NULL || (name && name[0] == '$'))
+    return (0);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -160,13 +160,14 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   return (res);
 }
 
-int print_array(const s_symbol *symbols, const size_t total_symbols,
-                const t_spec *specs, const t_options *opt) {
+int print_array(const s_symbol *symbols, const size_t total_symbols, const t_spec *specs, const t_options *opt)
+{
   size_t i;
   int value;
 
   i = 0;
-  while (i < total_symbols) {
+  while (i < total_symbols)
+  {
     if (specs->arch == X32_BIT)
       value = print_x32(symbols[i].sym, symbols[i].section,
                         symbols[i].name == NULL ? "" : symbols[i].name,

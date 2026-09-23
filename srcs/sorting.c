@@ -33,19 +33,22 @@ static const char *sym_trim(const char *str)
 static int letter_only_cmp(const char *s1, const char *s2)
 {
   size_t i;
+  size_t j;
 
   i = 0;
-  while (i < ft_strlen(s1) && i < ft_strlen(s2))
+  j = 0;
+  while (i < ft_strlen(s1) && j < ft_strlen(s2))
   {
     while (s1[i] == '_' || s1[i] == '@')
-      ++s1;
-    while (s2[i] == '_' || s2[i] == '@')
-      ++s2;
-    if (ft_tolower(s1[i]) != ft_tolower(s2[i]))
+      ++i;
+    while (s2[j] == '_' || s2[j] == '@')
+      ++j;
+    if (ft_tolower(s1[i]) != ft_tolower(s2[j]))
       break;
     ++i;
+    ++j;
   }
-  return (ft_tolower(s1[i]) - ft_tolower(s2[i]));
+  return (ft_tolower(s1[i]) - ft_tolower(s2[j]));
 }
 
 static char  get_letter(const void *symbol_hdr, const void *section_hdr, const bool arch_x32)

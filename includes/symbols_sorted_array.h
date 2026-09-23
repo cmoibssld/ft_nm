@@ -5,7 +5,7 @@
 # include <inttypes.h>
 # include <stdbool.h>
 # include <stddef.h>
-# include <sys/types.h>
+// # include <sys/types.h> // NOT IN THE STD C LIB
 
 # include "main.h"
 # include "section_header_info.h"

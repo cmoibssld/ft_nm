@@ -36,31 +36,24 @@ ssize_t looping_on_sections(const char *loaded_file, const size_t loaded_size,
 
   while (i < info->total_entry)
   {
-    if (loaded_size <=
-        info->address +
-            (i + 1) * symbol_size) // Equal to loaded_size cannot be reached
+    if (loaded_size <= info->address + (i + 1) * symbol_size) // Equal to loaded_size cannot be reached
       return (-1);                 // i + 1 because symbol must fit entirely
-    section_header =
-        specs->arch == X32_BIT
-            ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[i]
-            : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[i];
-    sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type
-                                     : ((Elf64_Shdr *)section_header)->sh_type;
+    section_header = specs->arch == X32_BIT ? (void *)&((Elf32_Shdr *)(loaded_file + info->address))[i] : (void *)&((Elf64_Shdr *)(loaded_file + info->address))[i];
+    sh_type = specs->arch == X32_BIT ? ((Elf32_Shdr *)section_header)->sh_type : ((Elf64_Shdr *)section_header)->sh_type;
     sh_type = specs->e == LITTLE ? sh_type : endian_swap32(sh_type);
     if (sh_type == SHT_SYMTAB)
-      total_symbols +=
-          looping_on_symbols(section_header, loaded_size, specs, symbol_size);
+      total_symbols += looping_on_symbols(section_header, loaded_size, specs, symbol_size);
     // need a good way to add + verify if looping is -1...
     ++i;
   }
   return (total_symbols);
 }
 
-ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size,
-                           const t_spec *specs, const size_t symbol_size)
+ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size, const t_spec *specs, const size_t symbol_size)
 {
-  uint64_t section_size; // Elf64_Shdr->sh_size is an Elf64_Xword so uint64_t.
-                         // Not optimal for 32 bits but whatever.
+  uint64_t section_size;
+  // Elf64_Shdr->sh_size is an Elf64_Xword so uint64_t.
+  // Not optimal for 32 bits but whatever.
   size_t i;
   bool out_of_bound;
 
@@ -69,7 +62,7 @@ ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size,
                      : ((Elf64_Shdr *)section_header)->sh_size;
   section_size =
       specs->e == LITTLE ? section_size : endian_swap32(section_size);
-  i = 0;
+  i = 1;
   while (i * symbol_size < section_size)
   {
     out_of_bound = true;
@@ -87,11 +80,8 @@ ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size,
     {
       out_of_bound =
           specs->e == LITTLE
-              ? ((Elf64_Shdr *)section_header)->sh_offset + i * symbol_size >
-                    loaded_size
-              : endian_swap64(((Elf64_Shdr *)section_header)->sh_offset) +
-                        i * symbol_size >
-                    loaded_size;
+              ? ((Elf64_Shdr *)section_header)->sh_offset + i * symbol_size > loaded_size
+              : endian_swap64(((Elf64_Shdr *)section_header)->sh_offset) + i * symbol_size > loaded_size;
     }
     if (out_of_bound == true)
       return (-1);
@@ -101,8 +91,10 @@ ssize_t looping_on_symbols(const void *section_header, const size_t loaded_size,
   return (i - 1); // first of the section is always a null symbol
 }
 
-s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
-                       const t_spec *specs, const t_section_table_data *info,
+s_symbol *create_array(const char *loaded_file,
+                       const size_t loaded_size,
+                       const t_spec *specs,
+                       const t_section_table_data *info,
                        size_t *total_symbols)
 {
   s_symbol *ophelia;
@@ -113,6 +105,7 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
     return (NULL); // out of bound
   else
     *total_symbols = (size_t)symbols_count;
+  printf("total: %lu \n\n", *total_symbols);
   ophelia = (s_symbol *)ft_calloc(*total_symbols, sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL); // two types of error... change this
@@ -121,8 +114,8 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
     free(ophelia);
     return (NULL);
   }
-  if (check_strings_name(ophelia, *total_symbols, loaded_file, loaded_size) ==
-      false) {
+  if (check_strings_name(ophelia, *total_symbols, loaded_file, loaded_size) == false)
+  {
     free(ophelia);
     return (NULL);
   }
@@ -130,7 +123,8 @@ s_symbol *create_array(const char *loaded_file, const size_t loaded_size,
 }
 
 bool check_strings_name(const s_symbol *symbol_array,
-                        const size_t total_symbols, const char *loaded_file,
+                        const size_t total_symbols,
+                        const char *loaded_file,
                         const size_t loaded_size)
 {
   uint64_t i;
@@ -161,8 +155,7 @@ bool check_strings_name(const s_symbol *symbol_array,
   return (true);
 }
 
-void sort_array(s_symbol *symbols_array, const size_t total_symbols,
-                const t_spec *specs, const t_options *opt)
+void sort_array(s_symbol *symbols_array, const size_t total_symbols, const t_spec *specs, const t_options *opt)
 {
   if (opt->p == true)
     return;
