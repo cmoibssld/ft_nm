@@ -12,7 +12,7 @@
 #include "main.h"
 #include "output_formatting.h"
 
-static bool is_a_bonus(const char c, const uint64_t sh_flags)
+bool is_a_bonus(const char c, const uint64_t sh_flags)
 {
   if (c == 'a' || c == 'A')
     return (true);
@@ -109,8 +109,8 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
-    return (0);
+  // if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+  //   return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
@@ -145,14 +145,14 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     return (0);
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap64(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
-    return (0);
+  // if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+  //   return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
-  if (name == NULL || (name && name[0] == '$'))
-    return (0);
+  // if (name && (name[0] == '$' || name[0] == '\0'))
+  //   return (0);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else

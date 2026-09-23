@@ -73,6 +73,7 @@ static char  get_letter(const void *symbol_hdr, const void *section_hdr, const b
   }
 }
 
+
 int sym_compare32(const void *sym_1, const void *sym_2)
 {
   const char *s1;
@@ -93,7 +94,13 @@ int sym_compare32(const void *sym_1, const void *sym_2)
     hd = (Elf32_Shdr *)((s_symbol *)sym_2)->section;
     sy = (Elf32_Sym *)((s_symbol *)sym_2)->sym;
     char c2 = get_letter(sy, hd, true);
-    return (ft_tolower(c1) - ft_tolower(c2));
+    res = ft_tolower(c1) - ft_tolower(c2);
+    if (res == 0)
+    {
+      const Elf32_Sym *sy1 = (Elf32_Sym *)((s_symbol *)sym_1)->sym; 
+      const Elf32_Sym *sy2 = (Elf32_Sym *)((s_symbol *)sym_2)->sym; 
+      res = sy1->st_value - sy2->st_value;
+    }
   }
   return (res);
 }
@@ -120,7 +127,13 @@ int sym_compare64(const void *sym_1, const void *sym_2)
     sy = (Elf64_Sym *)((s_symbol *)sym_2)->sym;
     char c2 = get_letter(sy, hd, false);
     // printf("letter %c vs %c\n", c1, c2);
-    return (c1 - c2);
+    res = ft_tolower(c1) - ft_tolower(c2);
+    if (res == 0)
+    {
+      const Elf64_Sym *sy1 = (Elf64_Sym *)((s_symbol *)sym_1)->sym; 
+      const Elf64_Sym *sy2 = (Elf64_Sym *)((s_symbol *)sym_2)->sym; 
+      res = sy1->st_value - sy2->st_value;
+    }
   }
   return (res);
 }

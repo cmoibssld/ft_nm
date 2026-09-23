@@ -105,7 +105,7 @@ s_symbol *create_array(const char *loaded_file,
     return (NULL); // out of bound
   else
     *total_symbols = (size_t)symbols_count;
-  printf("total: %lu \n\n", *total_symbols);
+  // printf("total: %lu \n\n", *total_symbols);
   ophelia = (s_symbol *)ft_calloc(*total_symbols, sizeof(s_symbol));
   if (ophelia == NULL)
     return (NULL); // two types of error... change this
