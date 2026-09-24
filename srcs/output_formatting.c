@@ -12,11 +12,12 @@
 #include "main.h"
 #include "output_formatting.h"
 
-bool is_a_bonus(const char c, const uint64_t sh_flags)
+bool is_a_bonus(const char c, const uint64_t sh_flags, const uint32_t sh_type) // not workingenough ...
 {
-  if (c == 'a' || c == 'A')
+  (void)sh_type;
+  if (ft_tolower(c) == 'a')
     return (true);
-  else if (c == 'N')
+  else if (ft_tolower(c) == 'n')
     return (true);
   else if (c == 't' && sh_flags == SHF_EXECINSTR)
     return (true);
@@ -77,28 +78,30 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
     c = 'C';
   else if (sh_type == SHT_NOBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
     c = 'B';
-  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
-    c = 'R'; // not working !!
+  else if ((sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
+           || sh_type == SHT_NOTE)
+    c = 'R';
   else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
     c = 'D'; // not working !!
   else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_EXECINSTR))
     c = 'T';
-  else if (sh_type == SHT_DYNAMIC)
+  else if (sh_type == SHT_DYNAMIC || sh_type == SHT_INIT_ARRAY || sh_type == SHT_FINI_ARRAY)
     c = 'D';
   else if (sh_type == SHT_PROGBITS && sh_flags == SHF_MASKPROC)
     c = 'G'; // not sure either. Only in .got that global variable are mention
              // and G is for stuff like global var
-  else if (sh_type == SHT_PROGBITS)
-    c = 'N'; // not perfect I guess
-  else if (sh_type == SHT_NOTE)
+  else if ((sh_type == SHT_GNU_verdef || sh_type == SHT_GNU_versym) && sh_flags == SHF_ALLOC)
+    c = 'N';
+  else if (sh_type == SHT_REL)
+    c = 'i';
+  else if (sh_flags == SHF_ALLOC)
     c = 'R';
-  else if (sh_type == SHT_INIT_ARRAY ||
-           sh_type == SHT_FINI_ARRAY) // constructor for C++
-    c = 'D';
   else
+  {
+    printf("bind: %d, type: %d sh_type: 0x%x, sh_flags: %lu -- ", bind, type, sh_type, sh_flags);
     c = '?';
-
-  if (bind == STB_LOCAL && c != '?' && c != 'N')
+  }
+  if (bind == STB_LOCAL && c != '?' && c != 'i' && c != 'N')
     c = ft_tolower(c);
 
   // remaining: i . I . n . p . S/s  . - .
@@ -125,7 +128,7 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
@@ -158,7 +161,7 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   if (ft_tolower(letter) == 'b')
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
-  if (opt->a == false && (is_a_bonus(letter, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);

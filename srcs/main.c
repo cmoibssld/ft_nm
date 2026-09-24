@@ -129,6 +129,8 @@ int  main(int ac, char **av)
     // printf("%s\n", loaded_file);
     return_code += core_logic(av[i], loaded_file, statbuf->st_size, &opt);
     close_file(loaded_file, statbuf, &fd);
+    if (i + 1 != ac)
+      write(1, "\n", 1);
   }
   free(statbuf);
   return (return_code);
