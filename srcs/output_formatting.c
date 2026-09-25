@@ -51,8 +51,6 @@ static bool is_undefined(const char c)
 
 char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
                    const uint32_t sh_type, const uint64_t sh_flags)
-// uint64_t not optimal for flags in 32bits -> uint32_t but whatever, that's not
-// that important
 {
   char c;
 
@@ -78,34 +76,35 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
     c = 'C';
   else if (sh_type == SHT_NOBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
     c = 'B';
-  else if ((sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
-           || sh_type == SHT_NOTE)
+  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
     c = 'R';
   else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
-    c = 'D'; // not working !!
+    c = 'D';
   else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_EXECINSTR))
     c = 'T';
   else if (sh_type == SHT_DYNAMIC || sh_type == SHT_INIT_ARRAY || sh_type == SHT_FINI_ARRAY)
     c = 'D';
   else if (sh_type == SHT_PROGBITS && sh_flags == SHF_MASKPROC)
-    c = 'G'; // not sure either. Only in .got that global variable are mention
-             // and G is for stuff like global var
-  else if ((sh_type == SHT_GNU_verdef || sh_type == SHT_GNU_versym) && sh_flags == SHF_ALLOC)
-    c = 'N';
+    c = 'G';
+  else if (sh_type == SHT_NOTE)
+    c = 'n';
+  else if (sh_type >= SHT_LOPROC && sh_type <= SHT_HIPROC)
+    c = 'n';
   else if (sh_type == SHT_REL)
     c = 'i';
   else if (sh_flags == SHF_ALLOC)
     c = 'R';
+  else if (sh_type == SHT_RELA && (sh_flags & SHF_ALLOC) == SHF_ALLOC)
+    c = 'R';
+  else if (sh_type == SHT_REL && (sh_flags & SHF_ALLOC) == SHF_ALLOC)
+    c = 'R';
+  else if ((sh_flags & SHF_ALLOC) == 0)
+    c = 'N';
   else
-  {
-    printf("bind: %d, type: %d sh_type: 0x%x, sh_flags: %lu -- ", bind, type, sh_type, sh_flags);
     c = '?';
-  }
   if (bind == STB_LOCAL && c != '?' && c != 'i' && c != 'N')
     c = ft_tolower(c);
 
-  // remaining: i . I . n . p . S/s  . - .
-  // i is not standart uni
   return (c);
 }
 
@@ -127,6 +126,8 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
                         e == LITTLE ? section->sh_flags : endian_swap64(section->sh_flags);
   
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
+  if (ft_tolower(letter) == 'b')
+    letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
   if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
     return (0);
@@ -163,6 +164,8 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
   if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
     return (0);
+  if (letter == '?')
+    printf("bind: %d, type: %d, st_shndx: %d, sh_type: 0x%x, sh_flags: %lu -- ", bind, type, st_shndx, sh_type, sh_flags);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
