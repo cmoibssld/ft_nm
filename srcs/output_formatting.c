@@ -12,15 +12,18 @@
 #include "main.h"
 #include "output_formatting.h"
 
-bool is_a_bonus(const char c, const uint64_t sh_flags, const uint32_t sh_type) // not workingenough ...
+bool is_a_bonus(const char c, const uint16_t st_name, const uint64_t sh_flags, const uint32_t sh_type) // not workingenough ...
 {
   (void)sh_type;
-  if (ft_tolower(c) == 'a')
+  (void)sh_flags;
+  if (st_name == STN_UNDEF)
     return (true);
-  else if (ft_tolower(c) == 'n')
-    return (true);
-  else if (c == 't' && sh_flags == SHF_EXECINSTR)
-    return (true);
+  // if (ft_tolower(c) == 'a')
+  //   return (true);
+  // else if (ft_tolower(c) == 'n')
+  //   return (true);
+  // else if (c == 't' && sh_flags == SHF_EXECINSTR)
+  //   return (true);
   else if (c == '?')
     return (true);
   else
@@ -56,17 +59,17 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
 
   if (bind == STB_GNU_UNIQUE)
     c = 'u';
-  else if (bind == STB_WEAK)
-  {
-    c = 'W';
-    if (st_shndx == SHN_UNDEF)
-      c = 'w';
-  }
   else if (bind == STB_WEAK && type == STT_OBJECT)
   {
     c = 'V';
     if (st_shndx == SHN_UNDEF)
       c = 'v';
+  }
+  else if (bind == STB_WEAK)
+  {
+    c = 'W';
+    if (st_shndx == SHN_UNDEF)
+      c = 'w';
   }
   else if (st_shndx == SHN_UNDEF)
     c = 'U';
@@ -74,7 +77,7 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
     c = 'A';
   else if (st_shndx == SHN_COMMON)
     c = 'C';
-  else if (sh_type == SHT_NOBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
+  else if (sh_type == SHT_NOBITS && (sh_flags & (SHF_ALLOC | SHF_WRITE)) != 0)
     c = 'B';
   else if (sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
     c = 'R';
@@ -100,6 +103,8 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
     c = 'R';
   else if ((sh_flags & SHF_ALLOC) == 0)
     c = 'N';
+  else if ((sh_flags & SHF_ALLOC))
+    c = 'R';
   else
     c = '?';
   if (bind == STB_LOCAL && c != '?' && c != 'i' && c != 'N')
@@ -129,7 +134,7 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   if (ft_tolower(letter) == 'b')
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
   addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sym->st_name, sh_type, sh_flags)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
@@ -162,7 +167,7 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   if (ft_tolower(letter) == 'b')
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
-  if (opt->a == false && (is_a_bonus(letter, sh_type, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sym->st_name, sh_type, sh_flags)))
     return (0);
   if (letter == '?')
     printf("bind: %d, type: %d, st_shndx: %d, sh_type: 0x%x, sh_flags: %lu -- ", bind, type, st_shndx, sh_type, sh_flags);
