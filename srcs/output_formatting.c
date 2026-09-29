@@ -18,8 +18,8 @@ bool is_a_bonus(const char c, const uint16_t st_name, const uint64_t sh_flags, c
   (void)sh_flags;
   if (st_name == STN_UNDEF)
     return (true);
-  // if (ft_tolower(c) == 'a')
-  //   return (true);
+  if (ft_tolower(c) == 'a')
+    return (true);
   // else if (ft_tolower(c) == 'n')
   //   return (true);
   // else if (c == 't' && sh_flags == SHF_EXECINSTR)
@@ -56,6 +56,9 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
                    const uint32_t sh_type, const uint64_t sh_flags)
 {
   char c;
+  const uint64_t alloc = sh_flags & SHF_ALLOC;
+  const uint64_t write = sh_flags & SHF_WRITE;
+  const uint64_t exec = sh_flags & SHF_EXECINSTR;
 
   if (bind == STB_GNU_UNIQUE)
     c = 'u';
@@ -77,33 +80,33 @@ char get_sym_flags(const char bind, const char type, const uint16_t st_shndx,
     c = 'A';
   else if (st_shndx == SHN_COMMON)
     c = 'C';
-  else if (sh_type == SHT_NOBITS && (sh_flags & (SHF_ALLOC | SHF_WRITE)) != 0)
+  else if (sh_type == SHT_NOBITS && alloc != 0 && write != 0)
     c = 'B';
-  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_ALLOC)
-    c = 'R';
-  else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_WRITE))
-    c = 'D';
-  else if (sh_type == SHT_PROGBITS && sh_flags == (SHF_ALLOC | SHF_EXECINSTR))
-    c = 'T';
-  else if (sh_type == SHT_DYNAMIC || sh_type == SHT_INIT_ARRAY || sh_type == SHT_FINI_ARRAY)
-    c = 'D';
-  else if (sh_type == SHT_PROGBITS && sh_flags == SHF_MASKPROC)
+  else if (sh_type == SHT_PROGBITS && alloc != 0 && write != 0 &&
+           (sh_flags & SHF_MASKPROC) != 0)
     c = 'G';
+  else if (sh_type == SHT_PROGBITS && alloc != 0 && write != 0)
+    c = 'D';
+  else if (sh_type == SHT_PROGBITS && alloc != 0 && exec != 0)
+    c = 'T';
+  else if (sh_type == SHT_PROGBITS && alloc != 0)
+    c = 'R';
+  else if (sh_type == SHT_DYNAMIC || sh_type == SHT_INIT_ARRAY ||
+           sh_type == SHT_FINI_ARRAY)
+    c = 'D';
+  else if (sh_type == SHT_NOTE && alloc != 0)
+    c = 'R';
   else if (sh_type == SHT_NOTE)
     c = 'n';
   else if (sh_type >= SHT_LOPROC && sh_type <= SHT_HIPROC)
     c = 'n';
-  else if (sh_type == SHT_REL)
-    c = 'i';
-  else if (sh_flags == SHF_ALLOC)
+  else if (sh_type == SHT_REL && alloc != 0)
     c = 'R';
-  else if (sh_type == SHT_RELA && (sh_flags & SHF_ALLOC) == SHF_ALLOC)
+  else if (sh_type == SHT_RELA && alloc != 0)
     c = 'R';
-  else if (sh_type == SHT_REL && (sh_flags & SHF_ALLOC) == SHF_ALLOC)
-    c = 'R';
-  else if ((sh_flags & SHF_ALLOC) == 0)
+  else if (alloc == 0)
     c = 'N';
-  else if ((sh_flags & SHF_ALLOC))
+  else if (alloc != 0)
     c = 'R';
   else
     c = '?';
