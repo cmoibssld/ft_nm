@@ -2,6 +2,7 @@
 #include <inttypes.h> // For the PRIx64 macro...
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "endian.h"
 #include "identification.h"

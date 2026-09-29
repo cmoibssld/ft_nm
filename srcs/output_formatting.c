@@ -12,25 +12,19 @@
 #include "main.h"
 #include "output_formatting.h"
 
-bool is_a_bonus(const char c, const uint16_t st_name, const uint64_t sh_flags, const uint32_t sh_type) // not workingenough ...
+bool is_a_bonus(const char c, const uint16_t st_name)
 {
-  (void)sh_type;
-  (void)sh_flags;
   if (st_name == STN_UNDEF)
     return (true);
   if (ft_tolower(c) == 'a')
     return (true);
-  // else if (ft_tolower(c) == 'n')
-  //   return (true);
-  // else if (c == 't' && sh_flags == SHF_EXECINSTR)
-  //   return (true);
   else if (c == '?')
     return (true);
   else
     return (false);
 }
 
-bool  is_aarch64_symbol(const char *name) // this is how it is done for llvm-nm. We can expect that it is how GNU nm does it
+bool  is_aarch64_symbol(const char *name)
 {
   if (name == NULL)
     return (false);
@@ -136,13 +130,14 @@ int print_x32(const Elf32_Sym *sym, const Elf32_Shdr *section, const char *name,
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   if (ft_tolower(letter) == 'b')
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
-  addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
-  if (opt->a == false && (is_a_bonus(letter, sym->st_name, sh_type, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sym->st_name)))
     return (0);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)
     return (0);
+
+  addr = e == LITTLE ? sym->st_value : endian_swap32(sym->st_value);
   if (is_undefined(letter) == true)
     res = printf("%18c %s\n", letter, name);
   else
@@ -170,10 +165,8 @@ int print_x64(const Elf64_Sym *sym, const Elf64_Shdr *section, const char *name,
   letter = get_sym_flags(bind, type, st_shndx, sh_type, sh_flags);
   if (ft_tolower(letter) == 'b')
     letter = ft_strncmp(".sbss", name, 5) == 0 ? letter + 17 : letter; // from b to s / B -> S   
-  if (opt->a == false && (is_a_bonus(letter, sym->st_name, sh_type, sh_flags)))
+  if (opt->a == false && (is_a_bonus(letter, sym->st_name)))
     return (0);
-  if (letter == '?')
-    printf("bind: %d, type: %d, st_shndx: %d, sh_type: 0x%x, sh_flags: %lu -- ", bind, type, st_shndx, sh_type, sh_flags);
   if (opt->g == true && is_local_symbol(letter))
     return (0);
   if (opt->u == true && is_undefined(letter) == false)

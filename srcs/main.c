@@ -89,7 +89,6 @@ char  *open_file(const char *file_name, struct stat *statbuf, int *fd)
   if (fstat(*fd, statbuf) == -1)
     return (close_file(NULL, statbuf, fd));
   loaded_file = mmap(NULL, statbuf->st_size, PROT_READ, MAP_PRIVATE, *fd, 0);
-  // subject says that one way to broke nm is whith invalid offset. Set offset here to 0 but maybe this is actually one of the problem ?
   if (loaded_file == NULL)
     return (close_file(NULL, statbuf, fd));
   return (loaded_file);
@@ -125,8 +124,6 @@ int  main(int ac, char **av)
       return_code = 1;
       continue ;
     }
-    // printf("%X\n", *(int *)loaded_file); // print first 4 bytes -> magic number. Careful, little or big endian change way of reading the bytes !!
-    // printf("%s\n", loaded_file);
     return_code += core_logic(av[i], loaded_file, statbuf->st_size, &opt);
     close_file(loaded_file, statbuf, &fd);
     if (i + 1 != ac)
@@ -135,11 +132,3 @@ int  main(int ac, char **av)
   free(statbuf);
   return (return_code);
 }
-
-// int  main(int ac, char **av)
-// {
-//    if (ac > 1)
-//     return (print_error_message(av[1]));
-//   else
-//     return (print_error_message("no arg given"));
-// }
