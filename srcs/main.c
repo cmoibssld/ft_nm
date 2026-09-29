@@ -89,7 +89,7 @@ char  *open_file(const char *file_name, struct stat *statbuf, int *fd)
   if (fstat(*fd, statbuf) == -1)
     return (close_file(NULL, statbuf, fd));
   loaded_file = mmap(NULL, statbuf->st_size, PROT_READ, MAP_PRIVATE, *fd, 0);
-  if (loaded_file == NULL)
+  if (loaded_file == NULL || loaded_file == MAP_FAILED)
     return (close_file(NULL, statbuf, fd));
   return (loaded_file);
 }
@@ -128,6 +128,22 @@ int  main(int ac, char **av)
     close_file(loaded_file, statbuf, &fd);
     if (i + 1 != ac)
       write(1, "\n", 1);
+  }
+  if (ac == 1)
+  {
+    fd = -1;
+    loaded_file = NULL;
+    loaded_file = open_file("a.out", statbuf, &fd);
+    if (loaded_file == NULL)
+    {
+      print_error_message("a.out");
+      return_code = 1;
+    }
+    else
+    {
+      return_code += core_logic("a.out", loaded_file, statbuf->st_size, &opt);
+      close_file(loaded_file, statbuf, &fd);
+    }
   }
   free(statbuf);
   return (return_code);
